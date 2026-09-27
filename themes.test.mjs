@@ -1,0 +1,66 @@
+import assert from "node:assert/strict";
+import { test } from "node:test";
+import { getTheme } from "./themes.mjs";
+
+test("blue remains the current Herdr palette and sidebar row colors", () => {
+  assert.deepEqual(getTheme().colors, {
+    panel_bg: "#000000", sidebar_bg: "#1d4263", surface_dim: "#ffffff",
+    overlay0: "#a7dff9", overlay1: "#ddf4ff", subtext0: "#d3ecfb",
+    accent: "#7fd3ff", active_row_bg: "#3977aa", selection_bg: "#4a85b5",
+    text: "#ffffff", red: "#ff3030", yellow: "#ffff00",
+    green: "#00ff66", teal: "#00ff66",
+  });
+  assert.deepEqual(
+    { badge: getTheme().badge, title: getTheme().title, separator: getTheme().separator },
+    { badge: "#7fdfff", title: "#d3ecfb", separator: "#6f97b8" },
+  );
+  assert.equal(getTheme("blue"), getTheme());
+});
+
+test("pink changes only blue UI tones, retaining semantic and neutral colors", () => {
+  const { colors: blue, ...blueRows } = getTheme("blue");
+  const { colors: pink, ...pinkRows } = getTheme("pink");
+  assert.deepEqual(Object.keys(pink), Object.keys(blue));
+  const changed = Object.keys(blue).filter((key) => blue[key] !== pink[key]);
+  assert.deepEqual(changed, [
+    "sidebar_bg", "overlay0", "overlay1", "subtext0", "accent", "active_row_bg", "selection_bg",
+  ]);
+  assert.deepEqual(
+    Object.fromEntries(["panel_bg", "surface_dim", "text", "red", "yellow", "green", "teal"]
+      .map((key) => [key, pink[key]])),
+    {
+      panel_bg: "#000000", surface_dim: "#ffffff", text: "#ffffff",
+      red: "#ff3030", yellow: "#ffff00", green: "#00ff66", teal: "#00ff66",
+    },
+  );
+  for (const key of Object.keys(blueRows)) assert.notEqual(pinkRows[key], blueRows[key]);
+});
+
+test("unknown theme names fail rather than selecting an implicit fallback", () => {
+  for (const name of ["", "Blue", "other", null, 0]) {
+    assert.throws(() => getTheme(name), /blue, pink, or red/);
+  }
+});
+
+test("RED uses the supplied swatches and keeps lifecycle colors", () => {
+  const red = getTheme("red");
+  assert.equal(red.colors.panel_bg, "#0b0b0e");
+  assert.equal(red.colors.sidebar_bg, "#26262b");
+  assert.equal(red.colors.active_row_bg, "#c81d25");
+  assert.equal(red.colors.accent, "#ff595e");
+  assert.equal(red.colors.text, "#fff0f3");
+  for (const key of ["red", "yellow", "green", "teal"]) {
+    assert.equal(red.colors[key], getTheme("blue").colors[key]);
+  }
+  const luminance = (hex) => {
+    const channels = hex.slice(1).match(/../g).map((value) => parseInt(value, 16) / 255)
+      .map((value) => value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4);
+    return channels[0] * 0.2126 + channels[1] * 0.7152 + channels[2] * 0.0722;
+  };
+  for (const [foreground, background] of [
+    [red.colors.text, red.colors.active_row_bg],
+    [red.colors.accent, red.colors.sidebar_bg],
+  ]) {
+    assert.ok((luminance(foreground) + 0.05) / (luminance(background) + 0.05) >= 4.5);
+  }
+});

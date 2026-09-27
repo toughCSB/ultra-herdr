@@ -1,0 +1,17 @@
+# Fresh-install seed only. Do not overwrite an existing config with this file.
+[theme]
+name = "tokyo-night"
+auto_switch = false
+
+[theme.custom]
+
+[ui]
+agent_panel_sort = "spaces"
+
+# >>> ultra-herdr sidebar
+[ui.sidebar.agents]
+rows = [["agent", "state_text"]]
+
+[ui.sidebar.spaces]
+rows = [["workspace", "state_text"]]
+# <<< ultra-herdr sidebar

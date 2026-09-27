@@ -1,0 +1,49 @@
+id = "local.ultra-herdr"
+name = "ultra-herdr"
+version = "3.0.0"
+min_herdr_version = "0.9.1"
+description = "Local-only Herdr themes, provider icons, grouped projects, and whole-window font settings"
+platforms = ["macos", "windows"]
+
+[[actions]]
+id = "apply"
+title = "ultra-herdr: apply saved settings on this server"
+description = "Apply saved settings on the PC hosting this plugin only"
+contexts = ["global"]
+command = ["node", "apply.mjs"]
+
+[[actions]]
+id = "settings"
+title = "ultra-herdr: settings on this plugin host"
+description = "Local Blue/Pink/RED and font settings. For the viewing PC, use its local launcher."
+contexts = ["global", "workspace"]
+command = ["herdr", "plugin", "pane", "open", "--plugin", "local.ultra-herdr", "--entrypoint", "settings", "--placement", "popup", "--focus"]
+
+[[actions]]
+id = "blue"
+title = "ultra-herdr: Blue theme on this plugin host"
+contexts = ["global", "workspace"]
+command = ["herdr", "plugin", "pane", "open", "--plugin", "local.ultra-herdr", "--entrypoint", "settings", "--placement", "popup", "--env", "ULTRA_HERDR_THEME=blue", "--focus"]
+
+[[actions]]
+id = "pink"
+title = "ultra-herdr: Pink theme on this plugin host"
+contexts = ["global", "workspace"]
+command = ["herdr", "plugin", "pane", "open", "--plugin", "local.ultra-herdr", "--entrypoint", "settings", "--placement", "popup", "--env", "ULTRA_HERDR_THEME=pink", "--focus"]
+
+[[actions]]
+id = "red"
+title = "ultra-herdr: RED theme on this plugin host"
+contexts = ["global", "workspace"]
+command = ["herdr", "plugin", "pane", "open", "--plugin", "local.ultra-herdr", "--entrypoint", "settings", "--placement", "popup", "--env", "ULTRA_HERDR_THEME=red", "--focus"]
+
+[[panes]]
+id = "settings"
+title = "ultra-herdr settings"
+placement = "popup"
+width = 78
+height = 18
+command = ["node", "settings.mjs"]
+
+[[startup]]
+command = ["node", "labels.mjs", "start"]

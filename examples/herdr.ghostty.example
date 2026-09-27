@@ -1,0 +1,7 @@
+# Launch with an explicit Herdr executable; see README.
+title = Herdr
+font-family = Jetendard
+font-size = 14
+background = #000000
+font-codepoint-map = U+E1A0-U+E1B7=Herdr Agent Icons Max
+font-codepoint-map = U+E1C0-U+E1C5=Herdr Agent Icons Max

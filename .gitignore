@@ -1,0 +1,16 @@
+node_modules/
+.DS_Store
+.env
+.env.*
+!.env.example
+*.log
+*.sock
+*.pid
+*.bak
+*.backup*
+settings.json
+config.toml
+herdr.ghostty
+verification/
+sessions/
+*.ultra-herdr-*

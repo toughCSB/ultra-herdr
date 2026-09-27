@@ -1,0 +1,15 @@
+{
+  "name": "ultra-herdr",
+  "version": "3.0.0",
+  "private": true,
+  "description": "Local-only Herdr themes, grouped projects, provider icons, and whole-window fonts",
+  "license": "MIT",
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "test": "node --test --test-reporter=tap *.test.mjs",
+    "check": "node --check apply.mjs && node --check font.mjs && node --check labels.mjs && node --check omo-theme.mjs && node --check providers.mjs && node --check settings.mjs && node --check themes.mjs && node --check integrations/omo/herdr-senpi.js && node --check integrations/omo/herdr-senpi.mjs"
+  }
+}
