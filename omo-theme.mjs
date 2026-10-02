@@ -12,18 +12,25 @@ export function omoTheme(name, themeName = "herdr-contrast") {
   theme.name = themeName;
   if (name === "pink") {
     Object.assign(theme.vars, {
-      cyan: "#ff9bce", blue: "#ffacd8", accent: "#ff91ca",
-      selectedBg: "#761342", userMsgBg: "#ffc6e3",
-      toolPendingBg: "#64113f", toolSuccessBg: "#741047",
-      toolErrorBg: "#601a37", customMsgBg: "#831b53",
+      cyan: "#9b235f", blue: "#a32463", accent: "#a32463",
+      green: "#9b235f", red: "#b42318", yellow: "#d65a00",
+      text: "#30252b", gray: "#705d67", dimGray: "#806b76", darkGray: "#9e8793",
+      selectedBg: "#febab9", userMsgBg: "#f4a0bf",
+      toolPendingBg: "#ffedf3", toolSuccessBg: "#f7e9f0",
+      toolErrorBg: "#ffe6e6", customMsgBg: "#fbd8e7",
     });
     Object.assign(theme.colors, {
-      userMessageText: "#480d30", customMessageLabel: "#ffabd7",
-      toolOutput: "#f4d5e6", mdLink: "#ffabd7",
-      syntaxKeyword: "#f08bc4", syntaxVariable: "#ffd0e9",
-      syntaxType: "#f5a4d0", thinkingLow: "#bc78a0", thinkingMedium: "#e69dc6",
+      userMessageText: "#480d30", customMessageLabel: "#9b235f",
+      toolOutput: "#60404f", mdHeading: "#8b2755", mdLink: "#9b235f",
+      syntaxKeyword: "#9b235f", syntaxVariable: "#60404f",
+      syntaxFunction: "#7b4a00", syntaxString: "#8c3d29", syntaxNumber: "#9b235f",
+      syntaxComment: "#9e587b", toolDiffAdded: "#168a45",
+      syntaxType: "#7b2d77", syntaxOperator: "#30252b", syntaxPunctuation: "#30252b",
+      thinkingLow: "#806b76", thinkingMedium: "#9b235f",
     });
-    Object.assign(theme.export, { cardBg: theme.vars.toolPendingBg, infoBg: theme.vars.customMsgBg });
+    Object.assign(theme.export, {
+      pageBg: "#fffafa", cardBg: theme.vars.toolPendingBg, infoBg: theme.vars.customMsgBg,
+    });
   }
   if (name === "red") {
     Object.assign(theme.vars, {

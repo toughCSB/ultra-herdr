@@ -19,7 +19,7 @@ export function terminalSettingsPath(environment = process.env) {
 }
 
 // Windows Terminal accepts JSON with comments and trailing commas.
-function terminalJson(source) {
+export function terminalJson(source) {
   let clean = "";
   let quoted = false;
   for (let i = 0; i < source.length; i++) {
@@ -60,7 +60,7 @@ function terminalJson(source) {
   return JSON.parse(normalized);
 }
 
-export function terminalFontConfig(source, size) {
+export function terminalFontConfig(source, size, name) {
   validateFontSize(size);
   const settings = terminalJson(source);
   if (!Array.isArray(settings.profiles?.list)) throw new Error("Windows Terminal settings require profiles.list");
@@ -73,6 +73,15 @@ export function terminalFontConfig(source, size) {
     settings.profiles.list.push(profile);
   }
   profile.font = { ...profile.font, size };
+  if (name !== undefined) {
+    const { colors } = getTheme(name);
+    Object.assign(profile, {
+      background: colors.panel_bg,
+      foreground: name === "pink" ? colors.text : "#d4d4d4",
+      cursorColor: name === "pink" ? colors.text : "#d4d4d4",
+      selectionBackground: colors.selection_bg,
+    });
+  }
   return `${JSON.stringify(settings, null, 2)}\n`;
 }
 
@@ -164,14 +173,27 @@ export function setFontSize(size) {
   if (process.platform === "win32") {
     const path = terminalSettingsPath();
     const original = readFileSync(path, "utf8");
-    const updated = terminalFontConfig(original, size);
+    const updated = terminalFontConfig(original, size, getThemeName());
     if (updated !== original) writeFileSync(path, updated);
     mkdirSync(settingsDirectory, { recursive: true });
     writeFileSync(settingsPath, `${JSON.stringify(fontSettings(settings, size), null, 2)}\n`);
     return size; // Windows Terminal reloads settings; existing panes may need reopening.
   }
   const config = readFileSync(launcher, "utf8");
-  writeFileSync(launcher, fontConfig(config, size));
+  const themeName = getThemeName();
+  const theme = getTheme(themeName);
+  let updated = fontConfig(config, size);
+  for (const [key, value] of Object.entries({
+    background: theme.colors.panel_bg,
+    foreground: themeName === "pink" ? theme.colors.text : "#d4d4d4",
+    "cursor-color": themeName === "pink" ? theme.colors.text : "#d4d4d4",
+    "selection-background": theme.colors.selection_bg,
+  })) {
+    updated = new RegExp(`^\\s*${key}\\s*=`, "m").test(updated)
+      ? updated.replace(new RegExp(`^[ \\t]*${key}\\s*=.*$`, "gm"), `${key} = ${value}`)
+      : `${updated.trimEnd()}\n${key} = ${value}\n`;
+  }
+  writeFileSync(launcher, updated);
   try {
     execFileSync("ghostty", ["+validate-config", `--config-file=${launcher}`], { timeout: 10000 });
   } catch (error) {
@@ -186,6 +208,7 @@ export function setFontSize(size) {
       set appliedCount to 0
       repeat with pane in terminals
         if name of pane is "Herdr" then
+          if not (perform action "reload_config" on pane) then error "Could not reload Herdr terminal colors"
           if perform action "set_font_size:${size}" on pane then set appliedCount to appliedCount + 1
         end if
       end repeat

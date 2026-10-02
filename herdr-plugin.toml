@@ -1,45 +1,49 @@
 id = "local.ultra-herdr"
 name = "ultra-herdr"
-version = "3.0.0"
+version = "3.0.14"
 min_herdr_version = "0.9.1"
 description = "Local-only Herdr themes, provider icons, grouped projects, and whole-window font settings"
 platforms = ["macos", "windows"]
 
+[[build]]
+command = ["node", "client.mjs"]
+platforms = ["macos", "windows"]
+
 [[actions]]
 id = "apply"
-title = "ultra-herdr: apply saved settings on this server"
+title = "ultra-herdr: 저장된 설정 적용 [세션 실행 PC]"
 description = "Apply saved settings on the PC hosting this plugin only"
 contexts = ["global"]
 command = ["node", "apply.mjs"]
 
 [[actions]]
 id = "settings"
-title = "ultra-herdr: settings on this plugin host"
+title = "ultra-herdr: 설정 [세션 실행 PC]"
 description = "Local Blue/Pink/RED and font settings. For the viewing PC, use its local launcher."
 contexts = ["global", "workspace"]
 command = ["herdr", "plugin", "pane", "open", "--plugin", "local.ultra-herdr", "--entrypoint", "settings", "--placement", "popup", "--focus"]
 
 [[actions]]
 id = "blue"
-title = "ultra-herdr: Blue theme on this plugin host"
+title = "ultra-herdr: Blue [세션 실행 PC]"
 contexts = ["global", "workspace"]
 command = ["herdr", "plugin", "pane", "open", "--plugin", "local.ultra-herdr", "--entrypoint", "settings", "--placement", "popup", "--env", "ULTRA_HERDR_THEME=blue", "--focus"]
 
 [[actions]]
 id = "pink"
-title = "ultra-herdr: Pink theme on this plugin host"
+title = "ultra-herdr: Pink [세션 실행 PC]"
 contexts = ["global", "workspace"]
 command = ["herdr", "plugin", "pane", "open", "--plugin", "local.ultra-herdr", "--entrypoint", "settings", "--placement", "popup", "--env", "ULTRA_HERDR_THEME=pink", "--focus"]
 
 [[actions]]
 id = "red"
-title = "ultra-herdr: RED theme on this plugin host"
+title = "ultra-herdr: RED [세션 실행 PC]"
 contexts = ["global", "workspace"]
 command = ["herdr", "plugin", "pane", "open", "--plugin", "local.ultra-herdr", "--entrypoint", "settings", "--placement", "popup", "--env", "ULTRA_HERDR_THEME=red", "--focus"]
 
 [[panes]]
 id = "settings"
-title = "ultra-herdr settings"
+title = "ultra-herdr - 세션 실행 PC 설정"
 placement = "popup"
 width = 78
 height = 18

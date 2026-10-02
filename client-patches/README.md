@@ -1,0 +1,42 @@
+# Herdr 0.9.1 companion client
+
+v3.0.14의 전체 source patch는 `herdr-0.9.1-ultra-3.0.14.patch`입니다.
+기존 sidebar 수정, 실행 PC terminal 색상 전달, 밝은 테마의 중립색 보정과
+스크롤 patch/전체 frame 색상 일치를 포함합니다. 서버와 wire schema는 바꾸지 않습니다.
+플러그인 매니저는 release binary를 검증해 설치하므로 일반 사용자는 직접 빌드할 필요가 없습니다.
+아래 sidebar-only 안내와 이전 patch는 이전 버전 참고용입니다.
+
+이 renderer 패치는 ultra-herdr Pink 사이드바 `#ffebea`와 선택 행 `#febab9`의
+일반 sidebar 글자를 `#480d30`으로 표시합니다. 알려진 provider 고유색과
+Working 외 상태 아이콘의 색은 유지하고 상태 glyph는 채운 원형 `●`로 표시합니다.
+Pink Working 아이콘·문구·activity 마커는 팔레트의 진한 주황색 `#d65a00`을 사용하며,
+done/idle은 진한 녹색 `#168a45`를 사용합니다. mobile header,
+switcher, navigator overlay는 원래 아이콘을 유지합니다.
+Herdr 0.9.1 전용 companion 클라이언트가 필요합니다.
+
+- 기반: 공식 `herdrdev/herdr` 태그 `v0.9.1`
+- commit: `065ef9d6a531c49fb8bee7e818ef837065b21ee9`
+- 범위: 클라이언트 사이드바 렌더링과 회귀 테스트
+- 서버 코드, 설정 스키마, 통신 프로토콜 변경 없음
+- 적용 조건: sidebar background `#ffebea`; 선택 행 색상은 renderer에서 `#febab9`로 제한 적용
+
+Stock Herdr 0.9.1에는 sidebar chrome의 text foreground를 별도로 지정하는
+설정이 없습니다. 플러그인은 provider fallback/brand rules 및 data token 색을
+설정하고 이 patch가 section headings/buttons/separators를 보정합니다.
+
+공식 소스의 빌드 안내에 따라 Rust와 Zig 0.16.0을 준비한 뒤:
+
+```sh
+git apply /path/to/herdr-0.9.1-ultra-pink.patch
+cargo test --locked --bin herdr ultra_pink_sidebar_darks_chrome_and_colors_working_icons
+cargo test --locked --bin herdr client::shell::tests::
+cargo build --release --locked
+```
+
+실행 파일은 공식 Herdr와 별도 폴더에 보관합니다. Windows에서는 공식
+0.9.1 실행 파일 폴더의 ConPTY DLL·OpenConsole·라이선스도 함께 보관합니다.
+기존 서버를 종료하거나 교체하지 않고 새 클라이언트만 연결합니다.
+원본 실행 파일과 기존 실행기 설정 백업을 보존합니다.
+
+이 패치는 0.9.1 전용입니다. 다른 Herdr 버전으로 옮길 때는 다시 검증해야
+합니다. Herdr 본체와 이 파생 패치는 원본의 Apache-2.0 라이선스를 따릅니다.

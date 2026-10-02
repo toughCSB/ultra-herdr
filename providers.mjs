@@ -36,16 +36,22 @@ export function providerLabel(agent) {
   return provider ? `${provider[0]} ${provider[1]}` : (agent.agent || "");
 }
 
-export function providerTokenCell(token = "$skyline_provider") {
-  return `{ token = "${token}", bold = true, fg = "#ffffff", rules = [${
-  Object.values(providers).filter(([, , color]) => color !== "#ffffff").map(([glyph, name, color]) =>
-    `{ equals = "${glyph} ${name}", fg = "${color}" }`,
-  ).join(", ")
+export function providerTokenCell(token = "$skyline_provider", theme) {
+  const defaultColor = theme?.providerDefault ?? "#ffffff";
+  const rules = Object.entries(providers).map(([id, [glyph, name, color]]) => ({
+    glyph,
+    name,
+    color: theme?.providerDefault
+      ? theme.providerColors?.[id] ?? defaultColor
+      : color,
+  })).filter(({ color }) => color !== defaultColor);
+  return `{ token = "${token}", bold = true, fg = "${defaultColor}", rules = [${
+  rules.map(({ glyph, name, color }) => `{ equals = "${glyph} ${name}", fg = "${color}" }`).join(", ")
 }] }`;
 }
 
 export const providerCell = providerTokenCell();
-// 13 provider rows, two cells each, plus title/status/divider: Herdr's 16-row limit.
+// 13 provider rows, two cells each, plus title/git-divider: within Herdr's 16-row limit.
 export const workspaceProviderKeys = Array.from({ length: 26 }, (_, index) => `ultra_provider_${index + 1}`);
 
 export function workspaceProviders(agents) {

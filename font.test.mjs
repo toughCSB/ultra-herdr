@@ -53,6 +53,25 @@ test("font size replaces only the launcher size and remains idempotent", () => {
   assert.equal(fontConfig(result, 14), result);
 });
 
+test("Windows Pink sets light terminal defaults without changing other profiles", () => {
+  const source = JSON.stringify({
+    profiles: { list: [
+      { name: "PowerShell", background: "#111111" },
+      { name: "Herdr", commandline: "custom-herdr.exe", font: { face: "Keep Font", size: 12 } },
+    ] },
+  });
+  const pink = JSON.parse(terminalFontConfig(source, 12, "pink"));
+  assert.deepEqual(pink.profiles.list[0], { name: "PowerShell", background: "#111111" });
+  assert.deepEqual(pink.profiles.list[1], {
+    name: "Herdr", commandline: "custom-herdr.exe", font: { face: "Keep Font", size: 12 },
+    background: "#fffafa", foreground: "#30252b", cursorColor: "#30252b",
+    selectionBackground: "#febab9",
+  });
+  const blue = JSON.parse(terminalFontConfig(JSON.stringify(pink), 12, "blue"));
+  assert.equal(blue.profiles.list[1].background, "#000000");
+  assert.equal(blue.profiles.list[1].foreground, "#d4d4d4");
+});
+
 test("font size can be inserted when the launcher used the default", () => {
   assert.equal(fontConfig("font-family = Jetendard\n", 16.5), "font-family = Jetendard\nfont-size = 16.5\n");
 });

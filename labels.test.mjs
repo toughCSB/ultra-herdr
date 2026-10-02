@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import { execFile } from "node:child_process";
+import { EventEmitter, once } from "node:events";
 import { mkdtempSync, rmSync } from "node:fs";
-import { createConnection } from "node:net";
+import { createConnection, createServer } from "node:net";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
@@ -18,6 +19,31 @@ test("Windows named pipe is stable per state directory and does not use socket f
   assert.equal(controlPath("win32", "C:\\Users\\SV\\state"), controlPath("win32", "c:\\users\\sv\\state"));
   assert.notEqual(controlPath("win32", "C:\\Users\\SV\\state"), controlPath("win32", "C:\\Users\\Other\\state"));
   assert.equal(controlPath("darwin", "/tmp/skyline"), "/tmp/skyline/labels.sock");
+});
+
+test("workspace terminal colors come from the execution PC and update when its theme changes", async () => {
+  const workspace = { workspace_id: "w1", tokens: { other: "keep" } };
+  const writes = [];
+  const run = async (args) => {
+    if (args[0] === "api") return JSON.stringify({ result: { snapshot: {
+      panes: [], workspaces: [workspace], agents: [],
+    } } });
+    writes.push(args);
+    for (let i = 5; i < args.length; i += 2) {
+      const [key, value] = args[i + 1].split("=");
+      if (args[i] === "--token") workspace.tokens[key] = value;
+      else delete workspace.tokens[key];
+    }
+    return "";
+  };
+  await syncLabels({ run, themeName: "pink" });
+  assert.equal(workspace.tokens.ultra_terminal_fg, "#30252b");
+  assert.equal(workspace.tokens.ultra_terminal_bg, "#fffafa");
+  assert.equal((await syncLabels({ run, themeName: "pink" })).updated, 0);
+  await syncLabels({ run, themeName: "red" });
+  assert.equal(workspace.tokens.ultra_terminal_bg, "#0b0b0e");
+  assert.equal(workspace.tokens.other, "keep");
+  assert.ok(writes.every(args => args[0] === "workspace"));
 });
 
 test("Windows syncs its SV badge locally without remote machine writes", async () => {
@@ -135,13 +161,60 @@ test("sessions share one project heading and the next session inherits it after 
     ],
   };
   const groups = projectGroups(snapshot, "SV");
-  assert.deepEqual(groups.get("w1:p1"), { skyline_group_machine: "[SV]", skyline_group: "Project", skyline_branch: "├─", skyline_separator: "┄  ┄  ┄  ┄  ┄  ┄" });
-  assert.deepEqual(groups.get("w1:p2"), { skyline_group_machine: "", skyline_group: "", skyline_branch: "└─", skyline_separator: "──────────────────────" });
+  assert.deepEqual(groups.get("w1:p1"), { skyline_group_machine: "[SV]", skyline_group: "Project", skyline_identity: "", skyline_branch: "├─", skyline_separator: "┄  ┄  ┄  ┄  ┄  ┄" });
+  assert.deepEqual(groups.get("w1:p2"), { skyline_group_machine: "", skyline_group: "", skyline_identity: "[SV] Project", skyline_branch: "└─", skyline_separator: "──────────────────────" });
   assert.equal(groups.get("w2:p1").skyline_group, "Project");
   snapshot.agents.shift();
   assert.equal(projectGroups(snapshot, "SV").get("w1:p2").skyline_group, "Project");
+  assert.equal(projectGroups(snapshot, "SV").get("w1:p2").skyline_identity, "");
   assert.equal(projectGroups(snapshot, "Local").get("w1:p2").skyline_group_machine, "[Local]");
   assert.equal(projectGroups(snapshot, "SV").get("w1:p2").skyline_separator, "──────────────────────");
+});
+
+test("every session keeps machine and project identity when Priority reorders siblings", () => {
+  const groups = projectGroups({
+    workspaces: [{ workspace_id: "w1", label: "Website" }],
+    agents: [
+      { pane_id: "p1", workspace_id: "w1" },
+      { pane_id: "p2", workspace_id: "w1" },
+    ],
+  }, "HOME");
+  for (const id of ["p2", "p1"]) {
+    const group = groups.get(id);
+    const heading = [group.skyline_group_machine, group.skyline_group, group.skyline_identity].filter(Boolean).join(" ");
+    assert.equal(heading, "[HOME] Website");
+  }
+  assert.equal(groups.get("p2").skyline_group, "");
+});
+
+test("workspace counts same-provider sessions and clears the count after they exit", async () => {
+  const workspace = { workspace_id: "w1", label: "Website", tokens: {} };
+  let agents = [
+    { pane_id: "p1", workspace_id: "w1", agent: "codex" },
+    { pane_id: "p2", workspace_id: "w1", agent: "codex" },
+  ];
+  const run = async (args) => {
+    if (args[0] === "api") return JSON.stringify({ result: { snapshot: {
+      panes: [], agents, workspaces: [workspace],
+    } } });
+    for (let i = 5; i < args.length; i += 2) {
+      const [key, value] = args[i + 1].split("=");
+      if (args[i] === "--token") workspace.tokens[key] = value;
+      else delete workspace.tokens[key];
+    }
+    return "";
+  };
+  await syncLabels({ run });
+  assert.equal(workspace.tokens.ultra_session_count, "2 sessions");
+  assert.equal(workspace.tokens.ultra_provider_1, "\ue1a1 Codex");
+  assert.equal(workspace.tokens.ultra_provider_2, undefined);
+  assert.equal((await syncLabels({ run })).updated, 0);
+  agents.pop();
+  await syncLabels({ run });
+  assert.equal(workspace.tokens.ultra_session_count, "1 session");
+  agents = [];
+  await syncLabels({ run });
+  assert.equal(workspace.tokens.ultra_session_count, undefined);
 });
 
 test("workspace dividers are published once without replacing unrelated metadata", async () => {
@@ -151,7 +224,11 @@ test("workspace dividers are published once without replacing unrelated metadata
     if (args[0] === "machine") return "[]";
     if (args[0] === "api") return JSON.stringify({ result: { snapshot: { panes: [], agents: [], workspaces: [workspace] } } });
     writes.push(args);
-    workspace.tokens.skyline_separator = args.at(-1).slice("skyline_separator=".length);
+    for (let i = 5; i < args.length; i += 2) {
+      const [key, value] = args[i + 1].split("=");
+      if (args[i] === "--token") workspace.tokens[key] = value;
+      else delete workspace.tokens[key];
+    }
     return "";
   };
   assert.equal((await syncLabels({ run })).updated, 1);
@@ -189,7 +266,7 @@ test("start is singleton and stop uses its control socket", async () => {
   const state = join(directory, "state");
   // The control protocol must work even if metadata sync fails. Never let this
   // lifecycle test invoke the user's real Herdr server on either OS.
-  const environment = { ...process.env, HERDR_PLUGIN_STATE_DIR: state, HERDR_BIN_PATH: process.execPath };
+  const environment = { ...process.env, HERDR_PLUGIN_STATE_DIR: state, HERDR_BIN_PATH: process.execPath, HERDR_SOCKET_PATH: "" };
   const cli = (command) => exec(process.execPath, [script, command], { env: environment, timeout: 5_000 });
   const status = () => new Promise((resolve, reject) => {
     const socket = createConnection(controlPath(process.platform, state));
@@ -210,6 +287,58 @@ test("start is singleton and stop uses its control socket", async () => {
     await cli("stop");
   } finally {
     await cli("stop");
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test("daemon shutdown also clears activity through its native socket", { timeout: 8_000 }, async () => {
+  const directory = mkdtempSync(join(tmpdir(), "ultra-activity-daemon-"));
+  const state = join(directory, "state");
+  const apiPath = process.platform === "win32"
+    ? `${controlPath(process.platform, directory)}-api` : join(directory, "api.sock");
+  const events = new EventEmitter();
+  const server = createServer(socket => {
+    let input = "";
+    socket.setEncoding("utf8");
+    socket.on("data", chunk => {
+      input += chunk;
+      if (!input.includes("\n")) return;
+      const request = JSON.parse(input.slice(0, input.indexOf("\n")));
+      const snapshot = {
+        agents: [{ pane_id: "p1", workspace_id: "w1", agent_status: "working" }],
+        panes: [{ pane_id: "p1" }],
+        workspaces: [{ workspace_id: "w1" }],
+      };
+      const result = request.method === "session.snapshot" ? { snapshot } : {};
+      socket.end(`${JSON.stringify({ id: request.id, result })}\n`);
+      if (["pane.report_metadata", "workspace.report_metadata"].includes(request.method)) {
+        assert.equal(request.params.source, "local.ultra-herdr.activity");
+        events.emit(`${request.method}:${request.params.tokens.ultra_activity === null ? "cleared" : "animated"}`);
+      }
+    });
+  });
+  const listening = once(server, "listening");
+  server.listen(apiPath);
+  await listening;
+  const environment = {
+    ...process.env, HERDR_PLUGIN_STATE_DIR: state,
+    HERDR_BIN_PATH: process.execPath, HERDR_SOCKET_PATH: apiPath,
+  };
+  const cli = command => exec(process.execPath, [script, command], { env: environment, timeout: 5_000 });
+  try {
+    const animated = Promise.all(["pane", "workspace"].map(kind =>
+      once(events, `${kind}.report_metadata:animated`, { signal: AbortSignal.timeout(5_000) })));
+    await cli("start");
+    await animated;
+    const cleared = Promise.all(["pane", "workspace"].map(kind =>
+      once(events, `${kind}.report_metadata:cleared`, { signal: AbortSignal.timeout(5_000) })));
+    await cli("stop");
+    await cleared;
+  } finally {
+    await cli("stop");
+    const closed = once(server, "close");
+    server.close();
+    await closed;
     rmSync(directory, { recursive: true, force: true });
   }
 });

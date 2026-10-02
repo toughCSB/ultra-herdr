@@ -1,6 +1,6 @@
 # ultra-herdr
 
-**Herdr plugin v3.0.0 — 한 PC에서만 동작하는 Blue / Pink / RED 작업공간 테마와 목록 개선 플러그인**
+**Herdr plugin v3.0.14 — PC별 Blue / Pink / RED 작업공간 테마와 목록 개선 플러그인**
 
 `ultra-herdr`는 Herdr 0.9.1용 **로컬 전용** 플러그인입니다. 설치한 그 PC의 Herdr
 설정, 전용 터미널 글꼴 크기, OMO 사용자 테마만 바꿉니다. 복제 경로는 자유이며,
@@ -13,17 +13,51 @@ PC 구성이나 네트워크 토폴로지를 가정하지 않습니다.
 
 Repository: <https://github.com/toughCSB/ultra-herdr>
 
+## 플러그인 매니저 설치와 업데이트
+
+플러그인 매니저에서 `toughCSB/ultra-herdr`를 설치하거나 업데이트하세요.
+CLI로 같은 GitHub source를 설치할 수도 있습니다.
+
+```sh
+herdr plugin install toughCSB/ultra-herdr --yes
+```
+
+로컬 링크로 설치한 경우에는 먼저 `herdr plugin unlink local.ultra-herdr`를 실행한 뒤
+위 명령으로 GitHub source로 전환해야 매니저에서 업데이트할 수 있습니다.
+연결 해제는 저장 설정을 삭제하지 않으며 플러그인 ID는 `local.ultra-herdr`로 유지됩니다.
+설치 단계에서 release의 companion client를 SHA256 검증 후 별도 폴더에 설치하고
+Herdr 전용 launcher만 갱신합니다. 지원 binary는 macOS Apple Silicon과 Windows x64입니다.
+업데이트 후 **Herdr client 창만 다시 여세요**. 기존 서버나 agent 대화는 종료하지 않습니다.
+
+v3.0.14는 sidebar를 보는 PC의 테마로 유지하고, terminal 기본색은 실행 PC의
+metadata로 전달합니다. Pink 본문 강조는 진한 핑크 계열이며 diff 추가/삭제 색은
+유지합니다. 전체 frame과 스크롤 patch에 같은 색상 처리를 적용해 재도색 깜빡임을
+수정했습니다. OMO 사용자 테마도 각 실행 PC에서 적용됩니다.
+
 ## 제공 기능
 
 - **촘촘하고 구분된 목록:** 불필요한 빈 행을 없애고, 프로젝트 경계에는 얇은 실선,
   같은 workspace의 세션 사이에는 짧은 점선과 트리 행을 사용합니다.
 - **workspace별 그룹:** 경로나 표시 이름이 아니라 Herdr `workspace_id` 기준으로
   같은 workspace의 세션을 한 제목 아래에 묶습니다. `grouped` 정렬을 사용하세요.
+  하위 세션의 꺾쇠는 같은 열에 정렬됩니다. 후속 세션에도 소속을 보통 굵기로 남겨
+  `Priority` 정렬에서 순서가 바뀌어도 머신·프로젝트를 확인할 수 있습니다.
+  테마 적용은 설정 파일에 저장된 정렬 선택을 보존합니다.
 - **머신·프로바이더 표식:** agents 패널에는 머신 배지를, agents와 machines(또는
   spaces) 양쪽 패널에는 프로바이더 이름·아이콘·고유 색을 표시합니다. 머신 그룹
   제목은 Herdr가 표시하며, 중복 프로바이더는 머신 패널에서 한 번만 보입니다.
+- **다중 세션 개수:** machines/spaces 프로젝트 제목 옆의 `2 sessions`처럼
+  감지된 agent 세션 수를 표시합니다. 같은 프로바이더의 여러 세션도 각각 셉니다.
+  빈 터미널 탭 수와는 다르며, 세션 제목은 agents 목록에서 확인합니다.
+  machines의 중복 상태 텍스트 행을 없애고 branch/git 정보를 구분선 행에 합쳐
+  프로젝트마다 한 행 더 촘촘해집니다. 상태 아이콘과 얇은 구분선은 유지합니다.
 - **상태를 꾸미지 않음:** `working`, `blocked`, `idle`/`done`, `unknown`은 실제
   Herdr/agent 상태입니다. 실행 중인 항목을 가짜 `Working`으로 고정하지 않습니다.
+- **Working 스피너:** 실제 Working 세션과 해당 프로젝트에만 작은 회전 표시를
+  추가합니다. Herdr 시작 훅의 라벨러가 로컬 IPC로 현재 상태를 읽으며, 프레임마다
+  CLI 프로세스를 실행하지 않습니다. 작업 종료 시 표시를 지우고, 라벨러가 비정상
+  종료되더라도 activity metadata는 2초 뒤 만료됩니다. Pink 상태 아이콘은
+  꽉 찬 원형으로 표시하며 Working 아이콘은 진한 주황색을 사용합니다.
 - **Radar 런타임 없음:** 독립 아이콘 글꼴과 글리프 매핑만 사용합니다. Radar 플러그인,
   정렬기, 상태 애니메이터, 백그라운드 런타임은 필요하지 않습니다.
 - **전체 창 글꼴 크기:** 기본 `14pt`, 허용 범위 `8–36pt`이며 Herdr 전용 창의
@@ -31,21 +65,32 @@ Repository: <https://github.com/toughCSB/ultra-herdr>
 - **Blue / Pink / RED:** Pink는 선명한 핑크 강조색을 사용하고, RED는
   Satin Poppy Black Red 계열(`#0B0B0E`, `#26262B`, `#C81D25`, `#FF595E`,
   `#FFF0F3`)을 사용합니다.
-- **로컬 OMO 박스 연동:** 설치한 PC의 OMO 메시지·도구 박스와 링크/강조색을 테마에
-  맞춥니다. 임의의 다른 CLI 박스나 원격 터미널 내용을 재색칠하지 않습니다.
+- **OMO 본문 팔레트:** Pink는 밝은 핑크 메시지·도구 상자와 진한 핑크 강조색을
+  적용합니다. Blue/RED의 기존 연동 동작은 유지됩니다.
 
-상태색과 프로바이더 색은 별도 정보입니다. 예를 들어 `working`은 노랑,
-`blocked`는 빨강, `idle`/`done`은 녹색, `unknown`은 회색이고, Claude·Codex·OMO
-등의 아이콘 색은 테마 선택과 무관하게 유지됩니다.
+상태색은 테마와 별도 정보입니다. Pink `working`은 주황 `#d65a00`, Blue/RED의
+`working`은 노랑 `#ffff00`입니다. `blocked`는 빨강, `idle`/`done`은 녹색,
+`unknown`은 회색입니다. Pink provider icon/name은 저장된
+Radar 브랜드 팔레트로 표시하고, Blue/RED는 기존 provider 색을 사용합니다.
+
+Pink는 참고 화면의 사이드바 `#ffebea`, 선택 배경 `#febab9`를 사용합니다.
+메인 terminal과 OMO 본문에도 해당 실행 PC의 Pink 설정을 적용합니다. 사이드바 글자는 진한 색으로
+표시하고 프로바이더와 상태 아이콘은 꽉 찬 원형으로 표시하되 기존 상태별
+아이콘 색을 유지합니다(Working 아이콘은 주황). Working 문구와 활동 표시도
+주황색입니다. Codex, OpenCode 및 알 수 없는 provider의 기본색은 진한 잉크,
+알려진 provider는 기존 Radar 팔레트의 고유색을 사용합니다. 상태 묶음을
+provider 앞에 배치합니다. 전체
+sidebar chrome 글자 처리에는
+[Herdr 0.9.1 클라이언트 패치](client-patches/README.md)를 사용합니다.
 
 ```text
 [MyPC] · 웹 프로젝트
-  ├─ Codex · working
+  ├─ ● working · Codex
   ·················
-  └─ OMO   · idle
+  └─ ● idle · OMO
   ──────────────────
 [MyPC] · 문서 프로젝트
-  └─ Claude · blocked
+  └─ ● blocked · Claude
 ```
 
 ## 스크린샷
@@ -53,6 +98,7 @@ Repository: <https://github.com/toughCSB/ultra-herdr>
 아래는 실제 Herdr 터미널 출력을 렌더링한 **합성 `DEMO` 데이터**입니다. 개인 사용자명,
 프로젝트 경로, 실제 agent 런타임 결과를 포함하지 않으며, agent가 실제로 실행됐다는
 증거도 아닙니다.
+이전 버전의 데모 캡처이며 v3.0.14의 본문 팔레트와 스크롤 수정 검증 화면은 아닙니다.
 
 | Blue | Pink | RED |
 |---|---|---|
@@ -194,6 +240,18 @@ local-settings.cmd
 
 두 launcher는 저장소 루트의 `settings.mjs`를 실행합니다. SSH를 열거나 다른
 호스트에 쓰지 않습니다.
+
+Windows에서는 다음 명령으로 바탕화면에 **ultra-herdr Local Settings** 바로가기를
+만들 수 있습니다. 이후 이 바로가기를 사용하면 Herdr에서 어떤 원격 프로젝트를
+보고 있든 **바로가기를 누른 PC**의 설정이 열립니다.
+
+```powershell
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\create-local-shortcut.ps1
+```
+
+플러그인 메뉴의 **[세션 실행 PC]**는 이 로컬 바로가기와 다릅니다. 예를 들어 HOME에서
+Mac 세션을 선택해 그 메뉴를 열면 Mac 설정이 열리므로, Mac의 OMO 내용색만 바뀌고
+HOME 사이드바는 유지될 수 있습니다. 팝업의 **설정 대상 PC**를 확인하세요.
 
 ### Herdr 0.9.1에서 반드시 알아야 할 점
 

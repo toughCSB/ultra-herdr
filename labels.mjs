@@ -7,8 +7,10 @@ import { homedir } from "node:os";
 import { join, posix } from "node:path";
 import { promisify } from "node:util";
 import { fileURLToPath } from "node:url";
-import { getLocalMachineLabel } from "./font.mjs";
+import { getLocalMachineLabel, getThemeName } from "./font.mjs";
+import { getTheme } from "./themes.mjs";
 import { providerLabel, workspaceProviders } from "./providers.mjs";
+import { startActivity } from "./activity.mjs";
 
 const exec = promisify(execFile);
 const source = "local.ultra-herdr";
@@ -29,6 +31,7 @@ export function projectGroups(snapshot, machine) {
     agents.forEach((agent, index) => result.set(agent.pane_id, {
       skyline_group_machine: index === 0 ? `[${machine}]` : "",
       skyline_group: index === 0 ? project : "",
+      skyline_identity: index === 0 ? "" : `[${machine}] ${project}`,
       skyline_branch: index === agents.length - 1 ? "└─" : "├─",
       skyline_separator: index === agents.length - 1 ? projectSeparator : "  ┄".repeat(6).trimStart(),
     }));
@@ -57,7 +60,9 @@ async function runCommand(args) {
 export async function syncLabels({
   run = runCommand, onError = console.error,
   localMachineLabel = getLocalMachineLabel(),
+  themeName = getThemeName(),
 } = {}) {
+  const { colors } = getTheme(themeName);
   const failures = [];
   const failed = (endpoint, error) => {
     failures.push(endpoint);
@@ -79,6 +84,7 @@ export async function syncLabels({
           skyline_provider: provider,
           skyline_group_machine: "",
           skyline_group: "",
+          skyline_identity: "",
           skyline_branch: "",
           skyline_separator: "",
           ...groups.get(pane.pane_id),
@@ -100,9 +106,13 @@ export async function syncLabels({
         }
       }
       for (const workspace of snapshot.workspaces || []) {
+        const sessions = (snapshot.agents || []).filter((agent) => agent.workspace_id === workspace.workspace_id);
         const wanted = {
           skyline_separator: projectSeparator,
-          ...workspaceProviders((snapshot.agents || []).filter((agent) => agent.workspace_id === workspace.workspace_id)),
+          ultra_terminal_fg: themeName === "pink" ? colors.text : "#d4d4d4",
+          ultra_terminal_bg: colors.panel_bg,
+          ultra_session_count: sessions.length ? `${sessions.length} session${sessions.length === 1 ? "" : "s"}` : "",
+          ...workspaceProviders(sessions),
         };
         const changes = [];
         for (const [token, value] of Object.entries(wanted)) {
@@ -153,6 +163,7 @@ async function daemon() {
   const windows = process.platform === "win32";
   mkdirSync(stateDirectory(), { recursive: true });
   const log = (message) => appendFileSync(join(stateDirectory(), "labels.log"), `${new Date().toISOString()} ${message}\n`);
+  let stopActivity;
   const server = createServer((socket) => {
     socket.setTimeout(1_000, () => socket.destroy());
     socket.once("data", (chunk) => {
@@ -161,6 +172,7 @@ async function daemon() {
       else if (action === `${protocol} stop`) {
         socket.end(`${protocol} stopping\n`);
         clearInterval(timer);
+        if (stopActivity) void stopActivity().catch(error => log(`activity: ${error.message}`));
         server.close(() => {
           if (!windows) {
             try {
@@ -224,6 +236,12 @@ async function daemon() {
     }
   };
   const timer = setInterval(sync, interval);
+  if (process.env.HERDR_SOCKET_PATH) {
+    stopActivity = startActivity({
+      socketPath: process.env.HERDR_SOCKET_PATH,
+      onError: error => log(`activity: ${error.message}`),
+    });
+  }
   process.send?.("ready");
   process.disconnect?.();
   void sync();

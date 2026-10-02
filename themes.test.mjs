@@ -17,23 +17,32 @@ test("blue remains the current Herdr palette and sidebar row colors", () => {
   assert.equal(getTheme("blue"), getTheme());
 });
 
-test("pink changes only blue UI tones, retaining semantic and neutral colors", () => {
+test("pink uses light surfaces and dark semantic status colors", () => {
   const { colors: blue, ...blueRows } = getTheme("blue");
   const { colors: pink, ...pinkRows } = getTheme("pink");
+  assert.equal(pink.sidebar_bg, "#ffebea");
+  assert.equal(pink.active_row_bg, "#febab9");
+  assert.equal(pinkRows.sidebarText, "#480d30");
+  assert.equal(pinkRows.workingColor, "#d65a00");
+  assert.equal(pinkRows.providerDefault, "#16161c");
+  assert.deepEqual(pinkRows.providerColors, {
+    claude: "#d97757", codex: "#16161c", opencode: "#16161c", cline: "#586876",
+    kimi: "#1783ff", kilo: "#9a9808", deepseek: "#4d6bfe", gemini: "#4285f4",
+    qwen: "#615ced", kiro: "#9046ff",
+  });
+  assert.equal(pink.selection_bg, pink.active_row_bg);
   assert.deepEqual(Object.keys(pink), Object.keys(blue));
-  const changed = Object.keys(blue).filter((key) => blue[key] !== pink[key]);
-  assert.deepEqual(changed, [
-    "sidebar_bg", "overlay0", "overlay1", "subtext0", "accent", "active_row_bg", "selection_bg",
-  ]);
   assert.deepEqual(
     Object.fromEntries(["panel_bg", "surface_dim", "text", "red", "yellow", "green", "teal"]
       .map((key) => [key, pink[key]])),
     {
-      panel_bg: "#000000", surface_dim: "#ffffff", text: "#ffffff",
-      red: "#ff3030", yellow: "#ffff00", green: "#00ff66", teal: "#00ff66",
+      panel_bg: "#fffafa", surface_dim: "#30252b", text: "#30252b",
+      red: "#ff3030", yellow: "#d65a00", green: "#168a45", teal: "#168a45",
     },
   );
-  for (const key of Object.keys(blueRows)) assert.notEqual(pinkRows[key], blueRows[key]);
+  for (const key of ["workingColor", "badge", "title", "separator"]) {
+    assert.notEqual(pinkRows[key], blueRows[key]);
+  }
 });
 
 test("unknown theme names fail rather than selecting an implicit fallback", () => {

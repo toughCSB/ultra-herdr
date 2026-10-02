@@ -8,12 +8,27 @@ import { omoTheme, syncOmoTheme } from "./omo-theme.mjs";
 test("Pink changes message and tool surfaces but keeps status and diff semantics", () => {
   const blue = omoTheme("blue");
   const pink = omoTheme("pink");
+  assert.equal(pink.vars.userMsgBg, "#f4a0bf");
+  assert.equal(pink.vars.text, "#30252b");
+  assert.equal(pink.colors.userMessageText, "#480d30");
+  assert.equal(pink.export.pageBg, "#fffafa");
+  assert.deepEqual(
+    Object.fromEntries(["selectedBg", "toolPendingBg", "toolSuccessBg", "toolErrorBg", "customMsgBg"]
+      .map(key => [key, pink.vars[key]])),
+    {
+      selectedBg: "#febab9", toolPendingBg: "#ffedf3", toolSuccessBg: "#f7e9f0",
+      toolErrorBg: "#ffe6e6", customMsgBg: "#fbd8e7",
+    },
+  );
   for (const key of ["userMsgBg", "toolPendingBg", "toolSuccessBg", "customMsgBg", "cyan", "blue"]) {
     assert.notEqual(pink.vars[key], blue.vars[key]);
   }
-  for (const key of ["success", "error", "warning", "toolDiffAdded", "toolDiffRemoved"]) {
+  for (const key of ["success", "error", "warning", "toolDiffRemoved"]) {
     assert.equal(pink.colors[key], blue.colors[key]);
   }
+  assert.equal(pink.vars.green, "#9b235f");
+  assert.equal(pink.colors.syntaxNumber, "#9b235f");
+  assert.equal(pink.colors.toolDiffAdded, "#168a45");
   assert.equal(pink.export.cardBg, pink.vars.toolPendingBg);
   assert.deepEqual(omoTheme("blue"), blue);
 });

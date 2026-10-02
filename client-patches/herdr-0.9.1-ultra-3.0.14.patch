@@ -1,0 +1,1139 @@
+diff --git a/src/client/shell.rs b/src/client/shell.rs
+index 95ee5e7..c3564d7 100644
+--- a/src/client/shell.rs
++++ b/src/client/shell.rs
+@@ -195,8 +195,49 @@ fn status_icon(
+     }
+ }
+ 
+-fn status_dot(status: crate::api::schema::AgentStatus) -> &'static str {
+-    status_icon(status, crate::config::StatusIndicatorStyle::Dots)
++fn sidebar_status_icon(
++    status: crate::api::schema::AgentStatus,
++    style: crate::config::StatusIndicatorStyle,
++    palette: &Palette,
++) -> &'static str {
++    if is_ultra_herdr_pink(palette) {
++        "●"
++    } else {
++        status_icon(status, style)
++    }
++}
++
++fn is_ultra_herdr_pink(palette: &Palette) -> bool {
++    palette.sidebar_bg == ratatui::style::Color::Rgb(255, 235, 234)
++}
++
++fn sidebar_active_row_bg(palette: &Palette) -> ratatui::style::Color {
++    if is_ultra_herdr_pink(palette) {
++        ratatui::style::Color::Rgb(254, 186, 185)
++    } else {
++        palette.active_row_bg
++    }
++}
++
++fn sidebar_selection_bg(palette: &Palette) -> ratatui::style::Color {
++    if is_ultra_herdr_pink(palette) {
++        ratatui::style::Color::Rgb(254, 186, 185)
++    } else if palette.selection_bg == ratatui::style::Color::Reset {
++        palette.active_row_bg
++    } else {
++        palette.selection_bg
++    }
++}
++
++fn sidebar_status_color(
++    status: crate::api::schema::AgentStatus,
++    palette: &Palette,
++) -> ratatui::style::Color {
++    if is_ultra_herdr_pink(palette) && status == crate::api::schema::AgentStatus::Working {
++        palette.yellow
++    } else {
++        status_color(status, palette)
++    }
+ }
+ 
+ fn status_priority(status: crate::api::schema::AgentStatus) -> u8 {
+@@ -242,7 +283,77 @@ fn panel_contrast_fg(palette: &Palette) -> ratatui::style::Color {
+     }
+ }
+ 
+-fn blit_pane_surface(target: &mut FrameData, source: &FrameData, area: Rect) {
++pub(super) fn terminal_default_colors(snapshot: &ClientShellSnapshot) -> Option<(u32, u32)> {
++    let workspace = snapshot.workspaces.iter().find(|workspace| {
++        Some(workspace.workspace_id.as_str()) == snapshot.focused_workspace_id.as_deref()
++    })?;
++    let color = |key: &str| {
++        let (_, value) = workspace.tokens.iter().find(|(name, _)| name == key)?;
++        let hex = value.strip_prefix('#').filter(|hex| hex.len() == 6)?;
++        u32::from_str_radix(hex, 16).ok().map(|rgb| 0x0200_0000 | rgb)
++    };
++    Some((color("ultra_terminal_fg")?, color("ultra_terminal_bg")?))
++}
++
++fn terminal_gray(color: u32) -> Option<u8> {
++    match color {
++        0x0000_0001 | 0x0100_0000 | 0x0100_0010 => Some(0),
++        0x0000_0008 | 0x0100_0007 => Some(192),
++        0x0000_0009 | 0x0100_0008 => Some(128),
++        0x0000_0010 | 0x0100_000f | 0x0100_00e7 => Some(255),
++        0x0100_00e8..=0x0100_00ff => Some(8 + 10 * (color as u8 - 232)),
++        color if color >> 24 == 2 => {
++            let r = ((color >> 16) & 0xff) as u8;
++            let g = ((color >> 8) & 0xff) as u8;
++            let b = (color & 0xff) as u8;
++            (r == g && g == b).then_some(r)
++        }
++        _ => None,
++    }
++}
++
++fn apply_terminal_colors(cell: &mut crate::protocol::CellData, default_colors: Option<(u32, u32)>) {
++    let Some((foreground, background)) = default_colors else {
++        return;
++    };
++    let light_defaults =
++        ((background >> 16) & 0xff) * 299
++            + ((background >> 8) & 0xff) * 587
++            + (background & 0xff) * 114
++            >= 128_000;
++    if cell.fg == 0 {
++        cell.fg = foreground;
++    }
++    if cell.bg == 0 {
++        cell.bg = background;
++    }
++    if light_defaults {
++        // Existing TUIs can retain a dark startup palette. Rebase only neutral
++        // surfaces; colored diff and status backgrounds remain application-owned.
++        if let Some(gray) = terminal_gray(cell.bg).filter(|gray| *gray < 128) {
++            let scale = 255 - (u32::from(gray) / 2 + 12);
++            let r = ((background >> 16) & 0xff) * scale / 255;
++            let g = ((background >> 8) & 0xff) * scale / 255;
++            let b = (background & 0xff) * scale / 255;
++            cell.bg = 0x0200_0000 | r << 16 | g << 8 | b;
++        }
++        let light_cell = cell.bg >> 24 == 2
++            && ((cell.bg >> 16) & 0xff) * 299
++                + ((cell.bg >> 8) & 0xff) * 587
++                + (cell.bg & 0xff) * 114
++                >= 128_000;
++        if light_cell && terminal_gray(cell.fg).is_some_and(|gray| gray >= 128) {
++            cell.fg = foreground;
++        }
++    }
++}
++
++fn blit_pane_surface(
++    target: &mut FrameData,
++    source: &FrameData,
++    area: Rect,
++    default_colors: Option<(u32, u32)>,
++) {
+     let copy_width = source.width.min(area.width);
+     let copy_height = source.height.min(area.height);
+     let hyperlink_base = target.hyperlinks.len() as u32;
+@@ -261,6 +372,7 @@ fn blit_pane_surface(target: &mut FrameData, source: &FrameData, area: Rect) {
+                 continue;
+             };
+             *target_cell = source_cell.clone();
++            apply_terminal_colors(target_cell, default_colors);
+             target_cell.hyperlink = source_cell.hyperlink.and_then(|index| {
+                 ((index as usize) < source.hyperlinks.len()).then_some(hyperlink_base + index)
+             });
+diff --git a/src/client/shell/agent_sidebar.rs b/src/client/shell/agent_sidebar.rs
+index e43ab8c..4d205c3 100644
+--- a/src/client/shell/agent_sidebar.rs
++++ b/src/client/shell/agent_sidebar.rs
+@@ -326,7 +326,7 @@ pub(super) fn render_agent_row(
+ ) {
+     let palette = &config.palette;
+     let row_style = if row.focused {
+-        Style::default().bg(palette.active_row_bg)
++        Style::default().bg(sidebar_active_row_bg(palette))
+     } else {
+         Style::default()
+     };
+@@ -339,11 +339,11 @@ pub(super) fn render_agent_row(
+             .fg(palette.subtext0)
+             .add_modifier(Modifier::BOLD)
+     };
+-    let status_style = Style::default().fg(status_color(row.status, palette));
++    let status_style = Style::default().fg(sidebar_status_color(row.status, palette));
+     let secondary = Style::default().fg(palette.overlay0);
+     let icon = (
+-        status_icon(row.status, config.status_indicators),
+-        Style::default().fg(status_color(row.status, palette)),
++        sidebar_status_icon(row.status, config.status_indicators, palette),
++        Style::default().fg(sidebar_status_color(row.status, palette)),
+     );
+     let rows = if row.rows.is_empty() {
+         vec![vec![crate::ui::ResolvedToken {
+diff --git a/src/client/shell/composition.rs b/src/client/shell/composition.rs
+index e0888d0..d73c216 100644
+--- a/src/client/shell/composition.rs
++++ b/src/client/shell/composition.rs
+@@ -314,7 +314,13 @@ impl ClientShellState {
+             let start = usize::from(bar.y) * usize::from(frame.width) + usize::from(bar.x);
+             frame.cells[start..start + usize::from(bar.width)].to_vec()
+         });
+-        blit_pane_surface(&mut frame, &surface.frame, layout.pane_surface);
++        let default_colors = terminal_default_colors(snapshot);
++        blit_pane_surface(
++            &mut frame,
++            &surface.frame,
++            layout.pane_surface,
++            default_colors,
++        );
+         restore_mode_bar(&mut frame, mode_bar, mode_bar_cells.as_deref());
+         let mut occlusion = crate::kitty_graphics::surface::Occlusion::default();
+         let has_selection = self
+@@ -550,7 +556,7 @@ impl ClientShellState {
+                 );
+                 ratatui::widgets::Widget::render(block, geometry.outer, &mut composed);
+                 frame.replace_from_ratatui_buffer_preserving_effects(&composed, None);
+-                blit_pane_surface(&mut frame, &popup.frame, geometry.inner);
++                blit_pane_surface(&mut frame, &popup.frame, geometry.inner, default_colors);
+                 self.hits.popup = Some(PaneHit {
+                     rect: geometry.outer,
+                     inner_rect: geometry.inner,
+diff --git a/src/client/shell/config.rs b/src/client/shell/config.rs
+index 2d16b00..a3326ae 100644
+--- a/src/client/shell/config.rs
++++ b/src/client/shell/config.rs
+@@ -16,6 +16,60 @@ pub(super) fn merged_config_diagnostic(
+ }
+ 
+ impl ClientShellState {
++    pub(crate) fn endpoint_terminal_colors(
++        &self,
++        endpoint_id: &ClientEndpointId,
++    ) -> Option<(u32, u32)> {
++        self.endpoints
++            .iter()
++            .find(|endpoint| &endpoint.endpoint_id == endpoint_id)
++            .and_then(|endpoint| endpoint.snapshot.as_deref())
++            .and_then(terminal_default_colors)
++    }
++
++    pub(crate) fn endpoint_host_theme_update(
++        &self,
++        endpoint_id: &ClientEndpointId,
++        update: &crate::protocol::ClientHostThemeUpdate,
++    ) -> Option<crate::protocol::ClientHostThemeUpdate> {
++        use crate::protocol::{
++            ClientHostAppearance, ClientHostColor, ClientHostDefaultColorKind,
++            ClientHostThemeUpdate,
++        };
++        if matches!(update, ClientHostThemeUpdate::PaletteColors(_)) && !endpoint_id.is_local() {
++            return None;
++        }
++        let colors = self.endpoint_terminal_colors(endpoint_id);
++        let Some((foreground, background)) = colors else {
++            return Some(update.clone());
++        };
++        let host_color = |color: u32| ClientHostColor {
++            r: ((color >> 16) & 0xff) as u8,
++            g: ((color >> 8) & 0xff) as u8,
++            b: (color & 0xff) as u8,
++        };
++        Some(match update {
++            ClientHostThemeUpdate::DefaultColor { kind, .. } => {
++                ClientHostThemeUpdate::DefaultColor {
++                    kind: *kind,
++                    color: host_color(match kind {
++                        ClientHostDefaultColorKind::Foreground => foreground,
++                        ClientHostDefaultColorKind::Background => background,
++                    }),
++                }
++            }
++            ClientHostThemeUpdate::Appearance(_) => {
++                let appearance = crate::terminal_theme::RgbColor::from(host_color(background))
++                    .inferred_appearance();
++                ClientHostThemeUpdate::Appearance(match appearance {
++                    crate::terminal_theme::HostAppearance::Dark => ClientHostAppearance::Dark,
++                    crate::terminal_theme::HostAppearance::Light => ClientHostAppearance::Light,
++                })
++            }
++            ClientHostThemeUpdate::PaletteColors(_) => update.clone(),
++        })
++    }
++
+     pub(super) fn set_local_config_diagnostic(&mut self, diagnostic: Option<String>) {
+         self.local_config_diagnostic = diagnostic;
+         self.config_diagnostic = merged_config_diagnostic(
+diff --git a/src/client/shell/endpoint_agents.rs b/src/client/shell/endpoint_agents.rs
+index 3cc106b..5fef46e 100644
+--- a/src/client/shell/endpoint_agents.rs
++++ b/src/client/shell/endpoint_agents.rs
+@@ -13,7 +13,10 @@ pub(super) fn render_collapsed(
+     for (index, row) in rows.into_iter().take(area.height as usize).enumerate() {
+         let rect = Rect::new(area.x, area.y + index as u16, area.width, 1);
+         if row.agent.focused {
+-            buffer.set_style(rect, Style::default().bg(config.palette.active_row_bg));
++            buffer.set_style(
++                rect,
++                Style::default().bg(sidebar_active_row_bg(&config.palette)),
++            );
+         }
+         let initial = row.machine_label.chars().next().unwrap_or('?');
+         put_text(
+@@ -23,13 +26,13 @@ pub(super) fn render_collapsed(
+             rect.width,
+             &format!(
+                 "{initial}{}",
+-                status_icon(row.agent.status, config.status_indicators)
++                sidebar_status_icon(row.agent.status, config.status_indicators, &config.palette,)
+             ),
+             Style::default()
+                 .fg(if row.stale {
+                     config.palette.overlay0
+                 } else {
+-                    status_color(row.agent.status, &config.palette)
++                    sidebar_status_color(row.agent.status, &config.palette)
+                 })
+                 .add_modifier(if row.stale {
+                     Modifier::DIM
+diff --git a/src/client/shell/endpoint_sidebar.rs b/src/client/shell/endpoint_sidebar.rs
+index 34d2ccd..2db6efc 100644
+--- a/src/client/shell/endpoint_sidebar.rs
++++ b/src/client/shell/endpoint_sidebar.rs
+@@ -70,7 +70,7 @@ pub(super) fn render_collapsed(
+             skip -= 1;
+         } else {
+             if active && collapsed {
+-                buffer.set_style(rect, Style::default().bg(palette.active_row_bg));
++                buffer.set_style(rect, Style::default().bg(sidebar_active_row_bg(palette)));
+             }
+             let label = if endpoint.endpoint_id.is_local() {
+                 "L".to_owned()
+@@ -120,15 +120,11 @@ pub(super) fn render_collapsed(
+             let selected = state.selected_workspace_id.is_some_and(|target| {
+                 target.matches(&endpoint.endpoint_id, &workspace.workspace_id)
+             });
+-            let selection_background = if palette.selection_bg == ratatui::style::Color::Reset {
+-                palette.active_row_bg
+-            } else {
+-                palette.selection_bg
+-            };
++            let selection_background = sidebar_selection_bg(palette);
+             if selected {
+                 buffer.set_style(rect, Style::default().bg(selection_background));
+             } else if focused {
+-                buffer.set_style(rect, Style::default().bg(palette.active_row_bg));
++                buffer.set_style(rect, Style::default().bg(sidebar_active_row_bg(palette)));
+             }
+             let stale = endpoint.status != ClientEndpointStatus::Online;
+             let number = format!(" {}", workspace.number);
+@@ -157,12 +153,12 @@ pub(super) fn render_collapsed(
+                 rect.x.saturating_add(number_width),
+                 rect.y,
+                 rect.width.saturating_sub(number_width),
+-                status_icon(workspace.agent_status, config.status_indicators),
++                sidebar_status_icon(workspace.agent_status, config.status_indicators, palette),
+                 Style::default()
+                     .fg(if stale {
+                         palette.overlay0
+                     } else {
+-                        status_color(workspace.agent_status, palette)
++                        sidebar_status_color(workspace.agent_status, palette)
+                     })
+                     .add_modifier(dim),
+             );
+@@ -459,7 +455,10 @@ pub(super) fn render_expanded(
+                     false,
+                     palette,
+                 );
+-                if selected && palette.selection_bg == ratatui::style::Color::Reset {
++                if selected
++                    && palette.selection_bg == ratatui::style::Color::Reset
++                    && !is_ultra_herdr_pink(palette)
++                {
+                     buffer.set_style(nested, Style::default().bg(palette.active_row_bg));
+                 }
+                 if endpoint.status != ClientEndpointStatus::Online {
+@@ -577,7 +576,7 @@ fn render_endpoint_row(
+     palette: &Palette,
+ ) {
+     if highlighted {
+-        buffer.set_style(rect, Style::default().bg(palette.active_row_bg));
++        buffer.set_style(rect, Style::default().bg(sidebar_active_row_bg(palette)));
+     }
+     let (glyph, state, color) = endpoint_status_presentation(endpoint.status, palette);
+     let state = if endpoint.status == ClientEndpointStatus::Online {
+diff --git a/src/client/shell/overlays.rs b/src/client/shell/overlays.rs
+index 07417bd..f16dba0 100644
+--- a/src/client/shell/overlays.rs
++++ b/src/client/shell/overlays.rs
+@@ -859,9 +859,15 @@ fn render_navigator_overlay(
+             }
+         };
+         let current = if r.current { "◆ " } else { "" };
+-        let status = r.status.map(status_dot).unwrap_or_default();
+-        let status_separator = if status.is_empty() { "" } else { " " };
+-        let label = format!(" {tree} {current}{status}{status_separator}{}", r.label);
++        let status_symbol = r
++            .status
++            .map(|status| status_icon(status, crate::config::StatusIndicatorStyle::Dots))
++            .unwrap_or_default();
++        let status_separator = if status_symbol.is_empty() { "" } else { " " };
++        let label = format!(
++            " {tree} {current}{status_symbol}{status_separator}{}",
++            r.label
++        );
+         put_text(b, rect.x, rect.y, rect.width, &label, st);
+         if let Some(status) = r.status {
+             let prefix = format!(" {tree} {current}");
+@@ -874,8 +880,8 @@ fn render_navigator_overlay(
+                 b,
+                 rect.x.saturating_add(display_width(&prefix)),
+                 rect.y,
+-                display_width(status_dot(status)),
+-                status_dot(status),
++                display_width(status_symbol),
++                status_symbol,
+                 status_style,
+             );
+         }
+diff --git a/src/client/shell/render.rs b/src/client/shell/render.rs
+index 8038701..dfd3ebe 100644
+--- a/src/client/shell/render.rs
++++ b/src/client/shell/render.rs
+@@ -307,6 +307,64 @@ pub(super) fn render_shell(
+                 &mut hits,
+             );
+         }
++        // ultra-herdr's light Pink sidebar uses dark ink while retaining
++        // provider and non-Working status/activity glyph colors.
++        if is_ultra_herdr_pink(&config.palette) {
++            let area = layout.sidebar.intersection(buffer.area);
++            for y in area.y..area.bottom() {
++                for x in area.x..area.right() {
++                    let cell = &mut buffer[(x, y)];
++                    let symbol = cell.symbol();
++                    let preserve_icon = symbol.chars().count() == 1
++                        && matches!(
++                            symbol.chars().next(),
++                            Some(
++                                '\u{e1a0}'..='\u{e1b7}'
++                                | '\u{e1c0}'..='\u{e1c5}'
++                                | '●'
++                                | '○'
++                                | '·'
++                                | '×'
++                                | '◐'
++                                | '✓'
++                                | '\u{280b}'
++                                | '\u{2819}'
++                                | '\u{2839}'
++                                | '\u{2838}'
++                                | '\u{283c}'
++                                | '\u{2834}'
++                                | '\u{2826}'
++                                | '\u{2827}'
++                                | '\u{2807}'
++                                | '\u{280f}',
++                            )
++                        );
++                    let preserve_color = preserve_icon
++                        || cell.fg == config.palette.yellow
++                        || cell.fg == config.palette.green
++                        || matches!(
++                            cell.fg,
++                            ratatui::style::Color::Rgb(22, 22, 28)
++                                | ratatui::style::Color::Rgb(217, 119, 87)
++                                | ratatui::style::Color::Rgb(88, 104, 118)
++                                | ratatui::style::Color::Rgb(23, 131, 255)
++                                | ratatui::style::Color::Rgb(154, 152, 8)
++                                | ratatui::style::Color::Rgb(77, 107, 254)
++                                | ratatui::style::Color::Rgb(66, 133, 244)
++                                | ratatui::style::Color::Rgb(97, 92, 237)
++                                | ratatui::style::Color::Rgb(144, 70, 255)
++                                | ratatui::style::Color::Rgb(0, 51, 255)
++                                | ratatui::style::Color::Rgb(255, 48, 48)
++                                | ratatui::style::Color::Rgb(255, 255, 0)
++                                | ratatui::style::Color::Rgb(0, 255, 102)
++                                | ratatui::style::Color::Rgb(184, 204, 224)
++                        );
++                    if !preserve_color {
++                        cell.set_fg(ratatui::style::Color::Rgb(72, 13, 48));
++                    }
++                }
++            }
++        }
+     }
+     if layout.tab_bar.height > 0 {
+         render_tab_bar(
+diff --git a/src/client/shell/sidebar.rs b/src/client/shell/sidebar.rs
+index 161aecd..b4f3d12 100644
+--- a/src/client/shell/sidebar.rs
++++ b/src/client/shell/sidebar.rs
+@@ -48,23 +48,20 @@ pub(crate) fn render_collapsed_sidebar(
+             1,
+         );
+         let selected = selected_workspace_id == Some(workspace.workspace_id.as_str());
+-        let selection_background =
+-            if workspace.focused && palette.selection_bg == ratatui::style::Color::Reset {
+-                palette.active_row_bg
+-            } else {
+-                palette.selection_bg
+-            };
++        let selection_background = sidebar_selection_bg(palette);
+         if selected {
+             buffer.set_style(rect, Style::default().bg(selection_background));
+         } else if workspace.focused {
+-            buffer.set_style(rect, Style::default().bg(palette.active_row_bg));
++            buffer.set_style(rect, Style::default().bg(sidebar_active_row_bg(palette)));
+         }
+         let number_style = if selected {
+             Style::default()
+                 .fg(palette.overlay1)
+                 .bg(selection_background)
+         } else if workspace.focused {
+-            Style::default().fg(palette.text).bg(palette.active_row_bg)
++            Style::default()
++                .fg(palette.text)
++                .bg(sidebar_active_row_bg(palette))
+         } else {
+             Style::default().fg(palette.overlay0)
+         };
+@@ -82,8 +79,8 @@ pub(crate) fn render_collapsed_sidebar(
+             rect.x.saturating_add(2),
+             rect.y,
+             rect.width.saturating_sub(2),
+-            status_icon(status, config.status_indicators),
+-            Style::default().fg(status_color(status, palette)),
++            sidebar_status_icon(status, config.status_indicators, palette),
++            Style::default().fg(sidebar_status_color(status, palette)),
+         );
+         hits.workspaces.push(WorkspaceHit {
+             rect,
+@@ -130,7 +127,7 @@ pub(crate) fn render_collapsed_sidebar(
+             1,
+         );
+         if agent.focused {
+-            buffer.set_style(rect, Style::default().bg(palette.active_row_bg));
++            buffer.set_style(rect, Style::default().bg(sidebar_active_row_bg(palette)));
+         }
+         put_text(
+             buffer,
+@@ -149,8 +146,8 @@ pub(crate) fn render_collapsed_sidebar(
+             rect.x.saturating_add(2),
+             rect.y,
+             rect.width.saturating_sub(2),
+-            status_icon(agent.agent_status, config.status_indicators),
+-            Style::default().fg(status_color(agent.agent_status, palette)),
++            sidebar_status_icon(agent.agent_status, config.status_indicators, palette),
++            Style::default().fg(sidebar_status_color(agent.agent_status, palette)),
+         );
+         hits.agents.push((rect, pane_id));
+     }
+@@ -299,11 +296,11 @@ pub(crate) fn render_sidebar(
+         });
+         let dragged = state.dragged_workspace_id == Some(workspace.workspace_id.as_str());
+         if selected {
+-            buffer.set_style(rect, Style::default().bg(palette.selection_bg));
++            buffer.set_style(rect, Style::default().bg(sidebar_selection_bg(palette)));
+         } else if dragged {
+             buffer.set_style(rect, Style::default().bg(palette.surface1));
+         } else if workspace.focused {
+-            buffer.set_style(rect, Style::default().bg(palette.active_row_bg));
++            buffer.set_style(rect, Style::default().bg(sidebar_active_row_bg(palette)));
+         }
+         render_workspace_rows(
+             buffer,
+@@ -700,10 +697,10 @@ pub(in crate::client::shell) fn render_workspace_rows(
+         let spans = crate::ui::resolved_token_spans(
+             row,
+             (
+-                status_icon(status, indicators),
+-                Style::default().fg(status_color(status, palette)),
++                sidebar_status_icon(status, indicators, palette),
++                Style::default().fg(sidebar_status_color(status, palette)),
+             ),
+-            Style::default().fg(status_color(status, palette)),
++            Style::default().fg(sidebar_status_color(status, palette)),
+             workspace_style,
+             secondary_style,
+             Style::default().fg(palette.overlay1),
+@@ -717,11 +714,11 @@ pub(in crate::client::shell) fn render_workspace_rows(
+     }
+ 
+     let background = if selected {
+-        Some(palette.selection_bg)
++        Some(sidebar_selection_bg(palette))
+     } else if dragged {
+         Some(palette.surface1)
+     } else if endpoint_active && workspace.focused {
+-        Some(palette.active_row_bg)
++        Some(sidebar_active_row_bg(palette))
+     } else {
+         None
+     };
+diff --git a/src/client/shell/surface_patch.rs b/src/client/shell/surface_patch.rs
+index 6c829ac..0a7bfd1 100644
+--- a/src/client/shell/surface_patch.rs
++++ b/src/client/shell/surface_patch.rs
+@@ -176,14 +176,21 @@ impl ClientShellState {
+             let (cols, rows) = self.last_composed_size.unwrap_or_default();
+             self.layout(cols, rows).pane_surface
+         });
++        let default_colors = self.snapshot.as_deref().and_then(terminal_default_colors);
+         let composed_patch = fast_path_area.map(|area| ClientComposedSurfacePatch {
+             rows: patch
+                 .rows
+                 .iter()
+-                .map(|row| crate::protocol::PaneSurfacePatchRow {
+-                    x: area.x.saturating_add(row.x),
+-                    y: area.y.saturating_add(row.y),
+-                    cells: row.cells.clone(),
++                .map(|row| {
++                    let mut cells = row.cells.clone();
++                    for cell in &mut cells {
++                        apply_terminal_colors(cell, default_colors);
++                    }
++                    crate::protocol::PaneSurfacePatchRow {
++                        x: area.x.saturating_add(row.x),
++                        y: area.y.saturating_add(row.y),
++                        cells,
++                    }
+                 })
+                 .collect(),
+             cursor: patch
+diff --git a/src/client/shell/tests/agents_worktrees_notifications.rs b/src/client/shell/tests/agents_worktrees_notifications.rs
+index 5b8b122..033d8e8 100644
+--- a/src/client/shell/tests/agents_worktrees_notifications.rs
++++ b/src/client/shell/tests/agents_worktrees_notifications.rs
+@@ -1,5 +1,40 @@
+ use super::*;
+ 
++#[test]
++fn pink_sidebar_does_not_restyle_navigator_unknown_status() {
++    let mut state = ClientShellState::new(ClientShellConfig::from_config(&Config::default()));
++    state.config.palette.sidebar_bg = ratatui::style::Color::Rgb(255, 235, 234);
++    state.config.palette.active_row_bg = ratatui::style::Color::Rgb(254, 186, 185);
++    state.config.palette.overlay0 = ratatui::style::Color::Rgb(167, 223, 249);
++    let mut projected = snapshot();
++    let mut second_pane = projected.panes[0].clone();
++    second_pane.pane_id = "pane_2".into();
++    second_pane.label = Some("second".into());
++    second_pane.focused = false;
++    projected.panes.push(second_pane);
++    state.set_snapshot(Box::new(projected));
++    state.set_pane_surface(surface());
++    state.open_navigator_overlay();
++
++    let frame = state.compose(106, 30).expect("Pink navigator");
++    let pane = state
++        .hits
++        .navigator_rows
++        .iter()
++        .find_map(|(rect, target)| {
++            matches!(
++                target,
++                ClientNavigatorTarget::Pane { pane_id, .. } if pane_id == "pane_2"
++            )
++            .then_some(*rect)
++        })
++        .expect("second pane row");
++    let icon = cell_symbol_position(&frame, pane, "·");
++    let buffer = frame.to_ratatui_buffer().expect("navigator buffer");
++
++    assert_eq!(buffer[icon].fg, ratatui::style::Color::Rgb(167, 223, 249));
++}
++
+ #[test]
+ fn mouse_hits_use_stable_workspace_tab_and_pane_ids() {
+     let config = ClientShellConfig::from_config(&Config::default());
+@@ -609,6 +644,179 @@ fn muted_agent_sidebar_rows_do_not_stack_terminal_faint() {
+     }
+ }
+ 
++#[test]
++fn ultra_pink_sidebar_darks_chrome_and_colors_working_icons() {
++    use ratatui::style::Color;
++
++    let mut projected = snapshot();
++    let mut second_pane = projected.panes[0].clone();
++    second_pane.pane_id = "pane_2".into();
++    second_pane.focused = false;
++    projected.panes.push(second_pane);
++    let first = ClientShellAgent {
++        pane_id: "pane_1".into(),
++        workspace_id: "ws_1".into(),
++        tab_id: "tab_1".into(),
++        name: Some("first".into()),
++        display_agent: None,
++        agent: Some("pi".into()),
++        title: None,
++        terminal_title: None,
++        terminal_title_stripped: None,
++        agent_status: AgentStatus::Working,
++        state_change_seq: 1,
++        state_labels: Vec::new(),
++        tokens: vec![("summary".into(), "First".into())],
++        focused: true,
++    };
++    projected.agents = vec![
++        first.clone(),
++        ClientShellAgent {
++            pane_id: "pane_2".into(),
++            name: Some("second".into()),
++            tokens: vec![("summary".into(), "Second".into())],
++            focused: false,
++            ..first
++        },
++    ];
++    let mut config: Config = toml::from_str(
++        r##"
++[ui.sidebar.agents]
++rows = [["state_icon", "state_text", { token = "$summary", fg = "#d97757" }]]
++"##,
++    )
++    .expect("provider row with its Radar brand color");
++    config.ui.sidebar_width = 40;
++    projected.agents[0].agent = Some("claude".into());
++    projected.agents[0].tokens = vec![("summary".into(), "\u{e1a0} Claude".into())];
++    projected.agents[1].tokens.clear();
++    let mut state = ClientShellState::new(ClientShellConfig::from_config(&config));
++    state.config.palette.sidebar_bg = Color::Rgb(255, 235, 234);
++    state.config.palette.active_row_bg = Color::Rgb(57, 119, 170);
++    state.config.palette.selection_bg = Color::Rgb(74, 133, 181);
++    state.config.palette.yellow = Color::Rgb(166, 61, 0);
++    state.config.palette.red = Color::Rgb(255, 48, 48);
++    state.config.palette.green = Color::Rgb(0, 107, 60);
++    state.config.palette.teal = Color::Rgb(0, 107, 60);
++    state.config.palette.overlay0 = Color::Rgb(167, 223, 249);
++    state.set_snapshot(Box::new(projected.clone()));
++    state.set_pane_surface(surface());
++    for status in [
++        AgentStatus::Working,
++        AgentStatus::Blocked,
++        AgentStatus::Done,
++        AgentStatus::Idle,
++        AgentStatus::Unknown,
++    ] {
++        for style in [
++            crate::config::StatusIndicatorStyle::Dots,
++            crate::config::StatusIndicatorStyle::Symbols,
++        ] {
++            assert_eq!(
++                sidebar_status_icon(status, style, &state.config.palette),
++                "●"
++            );
++        }
++    }
++    for (status, expected) in [
++        (AgentStatus::Working, Color::Rgb(166, 61, 0)),
++        (AgentStatus::Blocked, Color::Rgb(255, 48, 48)),
++        (AgentStatus::Done, Color::Rgb(0, 107, 60)),
++        (AgentStatus::Idle, Color::Rgb(0, 107, 60)),
++        (AgentStatus::Unknown, Color::Rgb(167, 223, 249)),
++    ] {
++        assert_eq!(status_color(status, &state.config.palette), expected);
++    }
++    assert_eq!(
++        sidebar_status_color(AgentStatus::Working, &state.config.palette),
++        Color::Rgb(166, 61, 0)
++    );
++    let frame = state.compose(160, 30).expect("Pink sidebar frame");
++    let buffer = frame.to_ratatui_buffer().expect("Pink sidebar buffer");
++    let first_row = state
++        .hits
++        .agents
++        .iter()
++        .find(|(_, id)| id == "pane_1")
++        .unwrap()
++        .0;
++    let second_row = state
++        .hits
++        .agents
++        .iter()
++        .find(|(_, id)| id == "pane_2")
++        .unwrap()
++        .0;
++    let first_cell = cell_symbol_position(&frame, first_row, "Claude");
++    assert_eq!(buffer[first_cell].fg, Color::Rgb(217, 119, 87));
++    assert_eq!(buffer[first_cell].bg, Color::Rgb(254, 186, 185));
++    let second_icon = cell_symbol_position(&frame, second_row, "●");
++    assert_eq!(buffer[second_icon].fg, Color::Rgb(166, 61, 0));
++    assert_eq!(buffer[second_icon].bg, Color::Rgb(255, 235, 234));
++    let provider_cell = cell_symbol_position(&frame, first_row, "\u{e1a0}");
++    assert_eq!(buffer[provider_cell].fg, Color::Rgb(217, 119, 87));
++    let provider_name = cell_symbol_position(&frame, first_row, "Claude");
++    assert_eq!(buffer[provider_name].fg, Color::Rgb(217, 119, 87));
++    let status_cell = cell_symbol_position(&frame, first_row, "●");
++    assert_eq!(buffer[status_cell].fg, Color::Rgb(166, 61, 0));
++    let status_text = cell_symbol_position(&frame, first_row, "working");
++    assert_eq!(buffer[status_text].fg, Color::Rgb(166, 61, 0));
++    let section_heading = cell_symbol_position(&frame, Rect::new(0, 0, 40, 30), "spaces");
++    assert_eq!(buffer[section_heading].fg, Color::Rgb(72, 13, 48));
++    let sidebar_frame = cell_symbol_position(&frame, Rect::new(0, 0, 40, 1), "│");
++    assert_eq!(buffer[sidebar_frame].fg, Color::Rgb(72, 13, 48));
++    let workspace = state.hits.workspaces.first().unwrap().rect;
++    let workspace_icon = cell_symbol_position(&frame, workspace, "●");
++    assert_eq!(buffer[workspace_icon].fg, Color::Rgb(166, 61, 0));
++    let workspace_cell = cell_symbol_position(&frame, workspace, "client-shell");
++    assert_eq!(buffer[workspace_cell].fg, Color::Rgb(72, 13, 48));
++
++    let pink_sidebar_bg = state.config.palette.sidebar_bg;
++    let pink_active_row_bg = state.config.palette.active_row_bg;
++    for (sidebar_bg, active_row_bg) in [
++        (Color::Rgb(29, 66, 99), Color::Rgb(57, 119, 170)),
++        (Color::Rgb(38, 38, 43), Color::Rgb(200, 29, 37)),
++    ] {
++        state.config.palette.sidebar_bg = sidebar_bg;
++        state.config.palette.active_row_bg = active_row_bg;
++        assert_eq!(
++            sidebar_status_color(AgentStatus::Working, &state.config.palette),
++            state.config.palette.yellow,
++        );
++    }
++    state.config.palette.sidebar_bg = pink_sidebar_bg;
++    state.config.palette.active_row_bg = pink_active_row_bg;
++
++    projected.focused_pane_id = Some("pane_2".into());
++    for pane in &mut projected.panes {
++        pane.focused = pane.pane_id == "pane_2";
++    }
++    for agent in &mut projected.agents {
++        agent.focused = agent.pane_id == "pane_2";
++    }
++    state.set_snapshot(Box::new(projected.clone()));
++    let switched = state.compose(160, 30).expect("changed focus frame");
++    let buffer = switched.to_ratatui_buffer().expect("changed focus buffer");
++    assert_eq!(buffer[first_cell].fg, Color::Rgb(217, 119, 87));
++    assert_eq!(buffer[second_icon].bg, Color::Rgb(254, 186, 185));
++
++    for (status, label) in [(AgentStatus::Done, "done"), (AgentStatus::Idle, "idle")] {
++        state.outer_focused = Some(status == AgentStatus::Idle);
++        for agent in &mut projected.agents {
++            agent.agent_status = status;
++            agent.state_change_seq += 1;
++        }
++        state.set_snapshot(Box::new(projected.clone()));
++        let frame = state.compose(160, 30).expect("green status frame");
++        let buffer = frame.to_ratatui_buffer().expect("green status buffer");
++        let row = state.hits.agents.iter().find(|(_, id)| id == "pane_1").unwrap().0;
++        let icon = cell_symbol_position(&frame, row, "●");
++        let text = cell_symbol_position(&frame, row, label);
++        assert_eq!(buffer[icon].fg, Color::Rgb(0, 107, 60));
++        assert_eq!(buffer[text].fg, Color::Rgb(0, 107, 60));
++    }
++}
++
+ #[test]
+ fn workspace_state_text_does_not_stack_terminal_faint() {
+     use crate::config::SpaceSidebarToken;
+diff --git a/src/client/shell/tests/chrome_context.rs b/src/client/shell/tests/chrome_context.rs
+index ed21bc8..de8295f 100644
+--- a/src/client/shell/tests/chrome_context.rs
++++ b/src/client/shell/tests/chrome_context.rs
+@@ -1,5 +1,59 @@
+ use super::*;
+ 
++#[test]
++fn light_execution_theme_rebases_cached_neutral_surfaces_but_preserves_colored_diffs() {
++    let mut projection = snapshot();
++    projection.workspaces[0].tokens = vec![
++        ("ultra_terminal_fg".into(), "#30252b".into()),
++        ("ultra_terminal_bg".into(), "#fffafa".into()),
++    ];
++    let mut source = surface();
++    source.frame.cells[0].fg = 0x02cc_cccc;
++    source.frame.cells[0].bg = 0x0226_2626;
++    source.frame.cells[1].fg = 0x02cc_cccc;
++    source.frame.cells[1].bg = 0x0200_3311;
++    source.frame.cells[2].fg = 0x0000_0010;
++    source.frame.cells[2].bg = 0x0100_00eb;
++    let mut state = ClientShellState::new(ClientShellConfig::from_config(&Config::default()));
++    state.set_snapshot(Box::new(projection));
++    state.set_pane_surface(source);
++
++    let frame = state.compose(100, 20).expect("composed light terminal");
++    let pane = state.hits.panes[0].inner_rect;
++    let index = usize::from(pane.y) * usize::from(frame.width) + usize::from(pane.x);
++    assert_eq!(frame.cells[index].fg, 0x0230_252b);
++    assert_eq!(frame.cells[index].bg, 0x02e0_dbdb);
++    assert_eq!(frame.cells[index + 1].fg, 0x02cc_cccc);
++    assert_eq!(frame.cells[index + 1].bg, 0x0200_3311);
++    assert_eq!(frame.cells[index + 2].fg, 0x0230_252b);
++    assert_ne!(frame.cells[index + 2].bg, 0x0100_00eb);
++}
++
++#[test]
++fn terminal_defaults_follow_execution_metadata_without_recoloring_explicit_cells_or_chrome() {
++    let mut projection = snapshot();
++    projection.workspaces[0].tokens = vec![
++        ("ultra_terminal_fg".into(), "#d4d4d4".into()),
++        ("ultra_terminal_bg".into(), "#0b0b0e".into()),
++    ];
++    let mut source = surface();
++    source.frame.cells[1].fg = 0x0200_ff66;
++    source.frame.cells[1].bg = 0x0211_2233;
++    let mut state = ClientShellState::new(ClientShellConfig::from_config(&Config::default()));
++    state.config.palette.panel_bg = ratatui::style::Color::Rgb(255, 250, 250);
++    state.set_snapshot(Box::new(projection));
++    state.set_pane_surface(source);
++
++    let frame = state.compose(100, 20).expect("composed terminal");
++    let pane = state.hits.panes[0].inner_rect;
++    let index = usize::from(pane.y) * usize::from(frame.width) + usize::from(pane.x);
++    assert_eq!(frame.cells[index].fg, 0x02d4_d4d4);
++    assert_eq!(frame.cells[index].bg, 0x020b_0b0e);
++    assert_eq!(frame.cells[index + 1].fg, 0x0200_ff66);
++    assert_eq!(frame.cells[index + 1].bg, 0x0211_2233);
++    assert_eq!(state.config.palette.panel_bg, ratatui::style::Color::Rgb(255, 250, 250));
++}
++
+ #[test]
+ fn tab_overflow_controls_scroll_the_client_owned_tab_bar() {
+     let mut snapshot = snapshot();
+diff --git a/src/client/shell/tests/endpoints.rs b/src/client/shell/tests/endpoints.rs
+index 846806f..fd1dbc4 100644
+--- a/src/client/shell/tests/endpoints.rs
++++ b/src/client/shell/tests/endpoints.rs
+@@ -73,6 +73,39 @@ fn state_with_remote() -> (ClientShellState, ClientEndpointId) {
+     (state, endpoint_id)
+ }
+ 
++#[test]
++fn remote_host_defaults_use_execution_theme_instead_of_the_viewers_light_background() {
++    use crate::protocol::{ClientHostColor, ClientHostDefaultColorKind, ClientHostThemeUpdate};
++    let (mut state, remote_id) = state_with_remote();
++    let mut remote = snapshot();
++    remote.boot_id = "remote-boot".into();
++    remote.workspaces[0].tokens = vec![
++        ("ultra_terminal_fg".into(), "#d4d4d4".into()),
++        ("ultra_terminal_bg".into(), "#0b0b0e".into()),
++    ];
++    state.set_endpoint_snapshot(&remote_id, Box::new(remote));
++    let update = ClientHostThemeUpdate::DefaultColor {
++        kind: ClientHostDefaultColorKind::Background,
++        color: ClientHostColor { r: 255, g: 250, b: 250 },
++    };
++
++    assert_eq!(
++        state.endpoint_host_theme_update(&remote_id, &update),
++        Some(ClientHostThemeUpdate::DefaultColor {
++            kind: ClientHostDefaultColorKind::Background,
++            color: ClientHostColor { r: 11, g: 11, b: 14 },
++        })
++    );
++    assert_eq!(
++        state.endpoint_host_theme_update(&ClientEndpointId::Local, &update),
++        Some(update)
++    );
++    assert_eq!(
++        state.endpoint_host_theme_update(&remote_id, &ClientHostThemeUpdate::PaletteColors(Vec::new())),
++        None
++    );
++}
++
+ fn state_with_scrollable_agents() -> (ClientShellState, ClientEndpointId) {
+     let (mut state, remote) = state_with_remote();
+     for endpoint_id in [ClientEndpointId::Local, remote.clone()] {
+diff --git a/src/client/shell/tests/mobile.rs b/src/client/shell/tests/mobile.rs
+index 4dac549..c8be2ac 100644
+--- a/src/client/shell/tests/mobile.rs
++++ b/src/client/shell/tests/mobile.rs
+@@ -1,5 +1,35 @@
+ use super::*;
+ 
++fn pink_mobile_state() -> ClientShellState {
++    let mut state = ClientShellState::new(ClientShellConfig::from_config(&Config::default()));
++    state.config.status_indicators = crate::config::StatusIndicatorStyle::Symbols;
++    state.config.palette.sidebar_bg = ratatui::style::Color::Rgb(255, 235, 234);
++    state.config.palette.active_row_bg = ratatui::style::Color::Rgb(254, 186, 185);
++    state.config.palette.yellow = ratatui::style::Color::Rgb(255, 255, 0);
++    state.config.palette.overlay0 = ratatui::style::Color::Rgb(167, 223, 249);
++    let mut projected = snapshot();
++    projected.workspaces[0].agent_status = AgentStatus::Working;
++    projected.agents.push(ClientShellAgent {
++        pane_id: "pane_1".into(),
++        workspace_id: "ws_1".into(),
++        tab_id: "tab_1".into(),
++        name: Some("working".into()),
++        display_agent: Some("working".into()),
++        agent: Some("codex".into()),
++        title: None,
++        terminal_title: None,
++        terminal_title_stripped: None,
++        agent_status: AgentStatus::Working,
++        state_change_seq: 1,
++        state_labels: Vec::new(),
++        tokens: Vec::new(),
++        focused: true,
++    });
++    state.set_snapshot(Box::new(projected));
++    state.set_pane_surface(surface());
++    state
++}
++
+ #[test]
+ fn navigate_update_status_uses_released_desktop_and_mobile_placement() {
+     let mut config = ClientShellConfig::from_config(&Config::default());
+@@ -69,6 +99,30 @@ fn mobile_layout_reserves_only_client_header() {
+     );
+ }
+ 
++#[test]
++fn pink_sidebar_keeps_mobile_header_status_colors_and_symbols() {
++    let mut state = pink_mobile_state();
++    let frame = state.compose(44, 20).expect("Pink mobile header");
++    let buffer = frame.to_ratatui_buffer().expect("mobile header buffer");
++    let icon = cell_symbol_position(&frame, Rect::new(0, 0, 3, 1), "◐");
++    let summary = cell_symbol_position(&frame, Rect::new(0, 1, 33, 1), "◐ 1 working");
++    let yellow = ratatui::style::Color::Rgb(255, 255, 0);
++
++    assert_eq!(buffer[icon].fg, yellow);
++    assert_eq!(buffer[summary].fg, yellow);
++}
++
++#[test]
++fn pink_sidebar_keeps_mobile_switcher_status_colors_and_symbols() {
++    let mut state = pink_mobile_state();
++    state.mode = ClientShellMode::Navigate;
++    let frame = state.compose(44, 30).expect("Pink mobile switcher");
++    let buffer = frame.to_ratatui_buffer().expect("mobile switcher buffer");
++    let icon = cell_symbol_position(&frame, Rect::new(0, 0, 44, 30), "◐");
++
++    assert_eq!(buffer[icon].fg, ratatui::style::Color::Rgb(255, 255, 0));
++}
++
+ #[test]
+ fn mobile_switcher_can_activate_an_online_saved_machine() {
+     let mut state = ClientShellState::new(ClientShellConfig::from_config(&Config::default()));
+diff --git a/src/client/shell/tests/popup_focus_projection.rs b/src/client/shell/tests/popup_focus_projection.rs
+index 25d3b33..e93b8a6 100644
+--- a/src/client/shell/tests/popup_focus_projection.rs
++++ b/src/client/shell/tests/popup_focus_projection.rs
+@@ -1035,6 +1035,47 @@ fn pending_scroll_target_does_not_relabel_an_older_surface() {
+     assert_eq!(state.pane_scroll_targets.get("pane_1"), Some(&10));
+ }
+ 
++#[test]
++fn themed_surface_patch_matches_full_composition_without_color_flashes() {
++    for background in ["#fffafa", "#0b0b0e"] {
++        let mut projection = snapshot();
++        projection.workspaces[0].tokens = vec![
++            ("ultra_terminal_fg".into(), "#30252b".into()),
++            ("ultra_terminal_bg".into(), background.into()),
++        ];
++        let mut state = ClientShellState::new(ClientShellConfig::from_config(&Config::default()));
++        state.set_snapshot(Box::new(projection));
++        let pane_surface = surface();
++        let mut updated_pane = pane_surface.panes[0].clone();
++        updated_pane.content_revision = 2;
++        state.set_pane_surface(pane_surface);
++        let composed = state.compose(100, 30).expect("initial frame");
++        let mut cell = state.pane_surface.as_ref().unwrap().frame.cells[0].clone();
++        cell.symbol = "N".into();
++        cell.fg = 0x02cc_cccc;
++        cell.bg = 0x0226_2626;
++        let patch = crate::protocol::PaneSurfacePatch {
++            boot_id: "boot-1".into(),
++            projection_revision: 1,
++            base_surface_revision: 1,
++            surface_revision: 2,
++            rows: vec![crate::protocol::PaneSurfacePatchRow {
++                x: 0, y: 0, cells: vec![cell],
++            }],
++            panes: vec![updated_pane],
++            cursor: None,
++        };
++        let ClientPaneSurfacePatchOutcome::Applied(Some(patch)) =
++            state.apply_pane_surface_patch(patch)
++        else {
++            panic!("expected fast patch");
++        };
++        let patched = apply_composed_surface_patch(&composed, patch).expect("patched frame");
++        let full = state.compose(100, 30).expect("full composition");
++        assert_eq!(patched.cells, full.cells, "patch changed theme colors");
++    }
++}
++
+ #[test]
+ fn retained_surface_patch_updates_only_pane_cells_without_recomposing_chrome() {
+     let mut state = ClientShellState::new(ClientShellConfig::from_config(&Config::default()));
+diff --git a/src/client/shell_runtime.rs b/src/client/shell_runtime.rs
+index 2e8d1c7..8a00929 100644
+--- a/src/client/shell_runtime.rs
++++ b/src/client/shell_runtime.rs
+@@ -625,6 +625,11 @@ pub(super) fn install_client_shell_snapshot(
+     let generation = connection.generation;
+     let project_snapshot =
+         !projection_pending && endpoints.active_id() == endpoint_id && connection.surface_active;
++    let previous_colors = state
++        .shell
++        .as_ref()
++        .and_then(|shell| shell.endpoint_terminal_colors(endpoint_id));
++    let next_colors = shell::terminal_default_colors(&snapshot);
+     let (composed, resize, graphics_cleanup) = if let Some(shell) = &mut state.shell {
+         let waits_for_selected_surface = projection_pending
+             || (endpoints.active_id() == endpoint_id
+@@ -663,6 +668,9 @@ pub(super) fn install_client_shell_snapshot(
+         (None, None, Vec::new())
+     };
+     apply_client_shell_input_source_changes(state, prefix_input_source);
++    if project_snapshot && previous_colors != next_colors {
++        state.replay_host_theme(endpoints, endpoint_id);
++    }
+     state.present_graphics(&graphics_cleanup);
+     if let Some(resize) = resize {
+         endpoints.send_to(endpoint_id, &resize);
+@@ -746,8 +754,18 @@ pub(super) fn finish_client_shell_input(
+     for request in outcome.requests {
+         if let ClientMessage::ClientShellHostTheme { update } = &request {
+             state.record_host_theme_update(update);
++            let endpoint_id = pending_activation
++                .as_ref()
++                .map_or_else(|| endpoints.active_id(), |activation| activation.target());
++            let update = state
++                .shell
++                .as_ref()
++                .and_then(|shell| shell.endpoint_host_theme_update(endpoint_id, update));
++            let Some(update) = update else {
++                continue;
++            };
+             if let Some(activation) = pending_activation.as_mut() {
+-                if let Err(error) = activation.update_host_theme(update.clone(), endpoints) {
++                if let Err(error) = activation.update_host_theme(update, endpoints) {
+                     rollback_endpoint_activation(
+                         state,
+                         endpoints,
+@@ -758,6 +776,11 @@ pub(super) fn finish_client_shell_input(
+                 }
+                 continue;
+             }
++            if active_endpoint_online {
++                write_to_server(endpoints, &ClientMessage::ClientShellHostTheme { update })
++                    .map_err(ClientError::ConnectionLost)?;
++            }
++            continue;
+         }
+         // Host focus belongs to a pending target even when the source has gone offline or has
+         // already had its surface revoked. Route it before the ordinary source-online gate.
+diff --git a/src/client/state.rs b/src/client/state.rs
+index 83b0742..835d923 100644
+--- a/src/client/state.rs
++++ b/src/client/state.rs
+@@ -144,10 +144,17 @@ impl ClientState {
+         endpoint_id: &endpoint::ClientEndpointId,
+     ) {
+         for update in &self.host_theme_updates {
++            let update = match self.shell.as_ref() {
++                Some(shell) => shell.endpoint_host_theme_update(endpoint_id, update),
++                None => Some(update.clone()),
++            };
++            let Some(update) = update else {
++                continue;
++            };
+             let _ = endpoints.send_to(
+                 endpoint_id,
+                 &crate::protocol::ClientMessage::ClientShellHostTheme {
+-                    update: update.clone(),
++                    update,
+                 },
+             );
+         }
