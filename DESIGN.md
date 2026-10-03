@@ -31,7 +31,9 @@ The supplied swatches are the color contract, not a new layout:
 `#FF595E` coral red, and `#FFF0F3` satin white.
 RED uses ink for the pane, charcoal for the sidebar and OMO tool surfaces,
 poppy for selected rows, coral for accents and dividers, and satin white for
-text and the user-message surface. Error-tool backing `#331015` is a dark
+text. User-message surfaces use bright red `#ffb3b8` with `#650d18` text;
+code surfaces use pale lavender `#e9ddff` with `#302044` text. Blue code
+surfaces use deep blue `#123b70` with `#e1efff` text. Error-tool backing `#331015` is a dark
 red tint so semantic error text remains legible.
 
 Fonts, density, and grouping stay unchanged. Lifecycle colors remain semantic.
@@ -88,3 +90,15 @@ The popup gathers both values before changing font or theme settings. `q` in
 either prompt cancels without writes. A changed font size retains the existing
 Ghostty and Windows Terminal behavior; applying the theme is delegated to
 `applyCurrentTheme(name, size)`. Presets do not change font sizes.
+
+## Terminal surface ownership (3.0.15)
+
+The plugin publishes optional `ultra_code_block_bg` / `ultra_code_block_fg`
+and `ultra_user_message_bg` / `ultra_user_message_fg` tokens per workspace.
+The companion resolves each pane owner independently of the viewer and focus.
+Unsupported apps and missing/invalid tokens preserve native presentation.
+Code fences and indented multi-color syntax are recognized from original cells;
+plain prose is not sufficient evidence. Semantic diff backgrounds and active
+prompts are excluded. User cards take priority over code decoration; selection
+is applied last. Recognition changes can affect untouched rows, so incremental
+patches use full composition when these overlays are enabled.

@@ -7,7 +7,7 @@ import { getTheme } from "./themes.mjs";
 const blue = JSON.parse(readFileSync(new URL("./omo-blue.json", import.meta.url), "utf8"));
 
 export function omoTheme(name, themeName = "herdr-contrast") {
-  getTheme(name);
+  const { userMessage } = getTheme(name);
   const theme = structuredClone(blue);
   theme.name = themeName;
   if (name === "pink") {
@@ -15,12 +15,12 @@ export function omoTheme(name, themeName = "herdr-contrast") {
       cyan: "#9b235f", blue: "#a32463", accent: "#a32463",
       green: "#9b235f", red: "#b42318", yellow: "#d65a00",
       text: "#30252b", gray: "#705d67", dimGray: "#806b76", darkGray: "#9e8793",
-      selectedBg: "#febab9", userMsgBg: "#f4a0bf",
+      selectedBg: "#febab9",
       toolPendingBg: "#ffedf3", toolSuccessBg: "#f7e9f0",
       toolErrorBg: "#ffe6e6", customMsgBg: "#fbd8e7",
     });
     Object.assign(theme.colors, {
-      userMessageText: "#480d30", customMessageLabel: "#9b235f",
+      customMessageLabel: "#9b235f",
       toolOutput: "#60404f", mdHeading: "#8b2755", mdLink: "#9b235f",
       syntaxKeyword: "#9b235f", syntaxVariable: "#60404f",
       syntaxFunction: "#7b4a00", syntaxString: "#8c3d29", syntaxNumber: "#9b235f",
@@ -35,12 +35,12 @@ export function omoTheme(name, themeName = "herdr-contrast") {
   if (name === "red") {
     Object.assign(theme.vars, {
       cyan: "#ff595e", blue: "#ff595e", accent: "#ff595e", text: "#fff0f3",
-      selectedBg: "#c81d25", userMsgBg: "#fff0f3",
+      selectedBg: "#c81d25",
       toolPendingBg: "#26262b", toolSuccessBg: "#26262b",
       toolErrorBg: "#331015", customMsgBg: "#26262b",
     });
     Object.assign(theme.colors, {
-      userMessageText: "#c81d25", customMessageLabel: "#ff595e",
+      customMessageLabel: "#ff595e",
       toolOutput: "#fff0f3", mdLink: "#ff595e",
       syntaxKeyword: "#ff595e", syntaxVariable: "#fff0f3",
       syntaxType: "#ff595e", thinkingLow: "#ff595e", thinkingMedium: "#fff0f3",
@@ -49,6 +49,8 @@ export function omoTheme(name, themeName = "herdr-contrast") {
       pageBg: "#0b0b0e", cardBg: theme.vars.toolPendingBg, infoBg: theme.vars.customMsgBg,
     });
   }
+  theme.vars.userMsgBg = userMessage.background;
+  theme.colors.userMessageText = userMessage.foreground;
   return theme;
 }
 

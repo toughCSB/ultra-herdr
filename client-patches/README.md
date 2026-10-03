@@ -1,5 +1,15 @@
 # Herdr 0.9.1 companion client
 
+v3.0.15의 전체 source patch는 `herdr-0.9.1-ultra-3.0.15.patch`입니다.
+공식 v0.9.1 기반 위에 적용하며 이전 patch와 중복 적용하지 않습니다.
+기존 sidebar/원격 테마 분리를 유지하고, 플러그인의 `ultra_user_message_*`,
+`ultra_code_block_*` workspace tokens로 대화창과 코드블럭을 표시합니다.
+원본 PTY cells, 서버, wire schema는 유지합니다. 색상 변경은 최종 클라이언트 합성에만
+적용하고 선택 영역은 그 위에 표시합니다. 부분 frame은 경계 변경에 맞춰 재합성합니다.
+
+아래는 3.0.14 및 초기 Pink patch 참고 설명입니다.
+
+
 v3.0.14의 전체 source patch는 `herdr-0.9.1-ultra-3.0.14.patch`입니다.
 기존 sidebar 수정, 실행 PC terminal 색상 전달, 밝은 테마의 중립색 보정과
 스크롤 patch/전체 frame 색상 일치를 포함합니다. 서버와 wire schema는 바꾸지 않습니다.

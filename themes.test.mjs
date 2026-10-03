@@ -30,7 +30,8 @@ test("pink uses light surfaces and dark semantic status colors", () => {
     kimi: "#1783ff", kilo: "#9a9808", deepseek: "#4d6bfe", gemini: "#4285f4",
     qwen: "#615ced", kiro: "#9046ff",
   });
-  assert.equal(pink.selection_bg, pink.active_row_bg);
+  assert.equal(pink.selection_bg, "#9b235f");
+  assert.notEqual(pink.selection_bg, pink.active_row_bg);
   assert.deepEqual(Object.keys(pink), Object.keys(blue));
   assert.deepEqual(
     Object.fromEntries(["panel_bg", "surface_dim", "text", "red", "yellow", "green", "teal"]
@@ -43,6 +44,22 @@ test("pink uses light surfaces and dark semantic status colors", () => {
   for (const key of ["workingColor", "badge", "title", "separator"]) {
     assert.notEqual(pinkRows[key], blueRows[key]);
   }
+});
+
+test("Pink terminal palette has readable colors against its light surface", () => {
+  const pink = getTheme("pink");
+  const luminance = hex => {
+    const channels = hex.slice(1).match(/../g).map(value => parseInt(value, 16) / 255)
+      .map(value => value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4);
+    return channels[0] * 0.2126 + channels[1] * 0.7152 + channels[2] * 0.0722;
+  };
+  assert.equal(pink.terminalPalette?.length, 9);
+  for (const color of pink.terminalPalette) {
+    assert.ok((luminance(pink.colors.panel_bg) + 0.05) / (luminance(color) + 0.05) >= 4.5, color);
+  }
+  assert.ok((luminance("#ffffff") + 0.05) / (luminance(pink.colors.selection_bg) + 0.05) >= 7);
+  assert.equal(getTheme("red").terminalPalette, undefined);
+  assert.equal(getTheme("blue").terminalPalette, undefined);
 });
 
 test("unknown theme names fail rather than selecting an implicit fallback", () => {

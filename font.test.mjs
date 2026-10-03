@@ -65,7 +65,7 @@ test("Windows Pink sets light terminal defaults without changing other profiles"
   assert.deepEqual(pink.profiles.list[1], {
     name: "Herdr", commandline: "custom-herdr.exe", font: { face: "Keep Font", size: 12 },
     background: "#fffafa", foreground: "#30252b", cursorColor: "#30252b",
-    selectionBackground: "#febab9",
+    selectionBackground: "#9b235f",
   });
   const blue = JSON.parse(terminalFontConfig(JSON.stringify(pink), 12, "blue"));
   assert.equal(blue.profiles.list[1].background, "#000000");

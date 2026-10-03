@@ -1,6 +1,6 @@
 # ultra-herdr
 
-**Herdr plugin v3.0.14 — PC별 Blue / Pink / RED 작업공간 테마와 목록 개선 플러그인**
+**Herdr plugin v3.0.15 — PC별 Blue / Pink / RED 작업공간 테마와 목록 개선 플러그인**
 
 `ultra-herdr`는 Herdr 0.9.1용 **로컬 전용** 플러그인입니다. 설치한 그 PC의 Herdr
 설정, 전용 터미널 글꼴 크기, OMO 사용자 테마만 바꿉니다. 복제 경로는 자유이며,
@@ -29,10 +29,19 @@ herdr plugin install toughCSB/ultra-herdr --yes
 Herdr 전용 launcher만 갱신합니다. 지원 binary는 macOS Apple Silicon과 Windows x64입니다.
 업데이트 후 **Herdr client 창만 다시 여세요**. 기존 서버나 agent 대화는 종료하지 않습니다.
 
-v3.0.14는 sidebar를 보는 PC의 테마로 유지하고, terminal 기본색은 실행 PC의
-metadata로 전달합니다. Pink 본문 강조는 진한 핑크 계열이며 diff 추가/삭제 색은
-유지합니다. 전체 frame과 스크롤 patch에 같은 색상 처리를 적용해 재도색 깜빡임을
-수정했습니다. OMO 사용자 테마도 각 실행 PC에서 적용됩니다.
+v3.0.15는 sidebar를 보는 PC의 테마로 유지하고, terminal 기본색은 실행 PC의
+metadata로 전달합니다. RED 사용자 대화창은 밝은 빨강 `#ffb3b8` / 진한 글자
+`#650d18`, 코드블럭은 옅은 보라 `#e9ddff` / 진한 글자 `#302044`입니다.
+Blue 코드블럭은 진한 파랑 `#123b70` / 밝은 글자 `#e1efff`로 표시합니다.
+이 색상은 플러그인 `themes.mjs`에서 제어하며, 각 pane을 실행하는 PC의 workspace
+metadata를 사용합니다. Pink 설정과 sidebar의 로컬 PC 기준은 유지됩니다.
+
+Companion client가 Codex/Claude의 제출된 사용자 메시지를 구분하고,
+Codex/Claude/OMO의 코드 fence 또는 들여쓴 구문 강조 행을 색칠합니다.
+일반 텍스트만으로 출력된 경계 없는 코드는 오인식을 피하려고 추측하지 않습니다.
+코드 글자의 대비, 원래 문자열·링크·한글 폭, diff 배경과 입력 중인 프롬프트를
+보존합니다. 부분 업데이트도 전체 frame과 같은 처리를 거쳐 스크롤 색상 잔상을
+방지합니다. OMO 사용자 메시지 팔레트 역시 동일한 플러그인 설정을 사용합니다.
 
 ## 제공 기능
 
@@ -261,8 +270,8 @@ workspace의 HOST에서 실행**됩니다. 원격 workspace를 보고 있을 때
 것이 아닙니다.
 
 따라서 현재 PC를 바꾸려면 위의 Local workspace 또는 로컬 launcher를 사용하세요.
-원격 화면의 agent ANSI 색은 원격 HOST가 생성합니다. 이 플러그인이 바꾸는 것은
-설치 호스트의 Herdr chrome과 설치 호스트의 OMO 색뿐입니다.
+원격 화면의 agent ANSI 색은 원격 HOST가 생성합니다. 플러그인은 설치 호스트의 Herdr chrome과 OMO 테마를 설정하고, companion client는
+원격 workspace가 전달한 색상으로 메시지·코드블럭을 표시합니다. 원본 PTY 데이터는 변경하지 않습니다.
 
 Herdr에는 public local-client-only reload API나 `config.toml` 자동 감시가 없습니다.
 따라서 이 플러그인은 remote workspace를 보고 있을 때 viewer의 chrome을 자동
@@ -321,7 +330,7 @@ npm run check
 2. 같은 `workspace_id` 세션이 함께 묶이고, 구분선과 간격이 읽기 좋다.
 3. Blue, Pink, RED 및 로컬 OMO 메시지·도구 박스가 바뀐다.
 4. `working`/`blocked`가 실제 상태와 맞고 `unknown`을 임의로 숨기지 않는다.
-5. 로컬 action은 로컬만 바꾸며 원격 ANSI/다른 CLI 박스를 바꾸지 않는다.
+5. 로컬 action은 로컬만 바꾸며 원격 pane은 실행 PC의 메시지·코드블럭 색상을 사용한다.
 
 ## 업데이트, 제거, 복구
 

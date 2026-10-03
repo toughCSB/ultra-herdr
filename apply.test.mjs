@@ -194,7 +194,7 @@ test("theme switching recolors UI but preserves vendor and lifecycle colors", ()
   const pink = applyTheme(blue, "pink");
   assert.match(pink, /sidebar_bg = "#ffebea"/);
   assert.match(pink, /active_row_bg = "#febab9"/);
-  assert.match(pink, /selection_bg = "#febab9"/);
+  assert.match(pink, /selection_bg = "#9b235f"/);
   assert.match(pink, /token = "\$skyline_identity", fg = "#480d30"/);
   assert.match(pink, /equals = "\[SV\]", fg = "#480d30"/);
   assert.match(pink, /token = "terminal_title_stripped", fg = "#480d30"/);

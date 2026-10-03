@@ -62,7 +62,7 @@ export async function syncLabels({
   localMachineLabel = getLocalMachineLabel(),
   themeName = getThemeName(),
 } = {}) {
-  const { colors } = getTheme(themeName);
+  const { colors, terminalPalette, userMessage, codeBlock } = getTheme(themeName);
   const failures = [];
   const failed = (endpoint, error) => {
     failures.push(endpoint);
@@ -111,6 +111,11 @@ export async function syncLabels({
           skyline_separator: projectSeparator,
           ultra_terminal_fg: themeName === "pink" ? colors.text : "#d4d4d4",
           ultra_terminal_bg: colors.panel_bg,
+          ultra_terminal_palette: terminalPalette?.join(",") || "",
+          ultra_user_message_bg: userMessage.background,
+          ultra_user_message_fg: userMessage.foreground,
+          ultra_code_block_bg: codeBlock?.background || "",
+          ultra_code_block_fg: codeBlock?.foreground || "",
           ultra_session_count: sessions.length ? `${sessions.length} session${sessions.length === 1 ? "" : "s"}` : "",
           ...workspaceProviders(sessions),
         };

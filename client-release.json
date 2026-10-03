@@ -1,14 +1,14 @@
 {
-  "version": "3.0.14",
+  "version": "3.0.15",
   "baseVersion": "0.9.1",
   "assets": {
     "darwin-arm64": {
       "file": "herdr-client-darwin-arm64.tar.gz",
-      "sha256": "4f43840328848a1a90219f8bc9fd1641e6692c0e6fc1b1766f6dd83735745e3f"
+      "sha256": "c9dbe19f3725cfb5d88e05afaeb8e277d64ca6744370f9552765cbffdaf03a1d"
     },
     "win32-x64": {
       "file": "herdr-client-win32-x64.zip",
-      "sha256": "1c3ffdb0de44d3d316d5fdff51dfeb5619287de22a44655ebf96d773cddd8c97"
+      "sha256": "d2790766417110e461cab824f0537f3201a5db5bffd8245a73db4cea29aef6bd"
     }
   }
 }

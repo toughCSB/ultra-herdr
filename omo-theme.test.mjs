@@ -4,6 +4,17 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { test } from "node:test";
 import { omoTheme, syncOmoTheme } from "./omo-theme.mjs";
+import { getTheme } from "./themes.mjs";
+
+test("every workspace card palette matches the OMO user-message surface", () => {
+  for (const name of ["blue", "pink", "red"]) {
+    const palette = getTheme(name).userMessage;
+    const theme = omoTheme(name);
+    assert.equal(theme.vars.userMsgBg, palette.background);
+    assert.equal(theme.colors.userMessageText, palette.foreground);
+    assert.notEqual(palette.background, getTheme(name).colors.panel_bg);
+  }
+});
 
 test("Pink changes message and tool surfaces but keeps status and diff semantics", () => {
   const blue = omoTheme("blue");
@@ -36,8 +47,8 @@ test("Pink changes message and tool surfaces but keeps status and diff semantics
 test("RED main-pane surfaces use the reference without recoloring semantic signals", () => {
   const blue = omoTheme("blue");
   const red = omoTheme("red");
-  assert.equal(red.vars.userMsgBg, "#fff0f3");
-  assert.equal(red.colors.userMessageText, "#c81d25");
+  assert.equal(red.vars.userMsgBg, "#ffb3b8");
+  assert.equal(red.colors.userMessageText, "#650d18");
   assert.equal(red.vars.toolSuccessBg, "#26262b");
   assert.equal(red.vars.accent, "#ff595e");
   assert.equal(red.export.pageBg, "#0b0b0e");
