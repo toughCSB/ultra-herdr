@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
-import { existsSync, mkdirSync, readFileSync, writeFileSync, chmodSync, renameSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync, chmodSync, renameSync, lstatSync, symlinkSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -18,6 +18,21 @@ export function ghosttyClientConfig(source, binary) {
   const command = `command = direct:${binary}`;
   if (!/^command\s*=/m.test(source)) throw new Error("Herdr launcher has no command");
   return source.replace(/^command\s*=.*$/m, command);
+}
+
+export function activateMacClient(base, directory) {
+  const binary = join(directory, "herdr");
+  if (!existsSync(binary)) throw new Error("Companion executable is missing");
+  const current = join(base, "current");
+  try {
+    if (!lstatSync(current).isSymbolicLink()) throw new Error("Companion current path is not a symlink");
+  } catch (error) {
+    if (error.code !== "ENOENT") throw error;
+  }
+  const temporary = `${current}.activate-${process.pid}`;
+  symlinkSync(directory, temporary, "dir");
+  renameSync(temporary, current);
+  return join(current, "herdr");
 }
 
 export async function installClient() {
@@ -68,7 +83,10 @@ export async function installClient() {
     execFileSync("powershell.exe", ["-NoProfile", "-EncodedCommand", Buffer.from(script, "utf16le").toString("base64")], { windowsHide: true });
   } else {
     const launcher = join(homedir(), ".local/share/herdr-launcher/herdr.ghostty");
-    writeFileSync(launcher, ghosttyClientConfig(readFileSync(launcher, "utf8"), binary));
+    // Ghostty can retain its command across new windows. Keep that command stable
+    // while atomically selecting the installed version for future launches.
+    const current = activateMacClient(base, directory);
+    writeFileSync(launcher, ghosttyClientConfig(readFileSync(launcher, "utf8"), current));
   }
   return binary;
 }

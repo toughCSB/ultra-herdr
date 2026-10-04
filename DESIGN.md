@@ -102,3 +102,17 @@ plain prose is not sufficient evidence. Semantic diff backgrounds and active
 prompts are excluded. User cards take priority over code decoration; selection
 is applied last. Recognition changes can affect untouched rows, so incremental
 patches use full composition when these overlays are enabled.
+
+### Wide glyphs and retained updates (3.0.16)
+
+A wide glyph owns its covered terminal cells even when a retained update resets
+the covered cell to a default blank with `skip=false`. Message recognition uses
+Unicode display width and checks only visible glyph cells. It does not ignore
+ordinary spaces or semantic backgrounds. Explicit-background blank padding and
+paragraph breaks belong to the recognized message; default-background whitespace
+still ends it. The source cells remain unchanged. A live masked CJK fixture and
+a sparse retained-update replay cover the full-frame-to-patch regression.
+
+Mac launchers use an atomically selected `current/herdr` symlink so a cached
+Ghostty command resolves the current installed client when opening a new window.
+Existing clients still need reopening after the initial stable-path migration.

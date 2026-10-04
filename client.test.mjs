@@ -1,6 +1,27 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { clientAsset, ghosttyClientConfig } from "./client.mjs";
+import { clientAsset, ghosttyClientConfig, activateMacClient } from "./client.mjs";
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { execFileSync } from "node:child_process";
+
+test("a cached Mac launcher command resolves the newly activated companion", { skip: process.platform === "win32" }, () => {
+  const base = mkdtempSync(join(tmpdir(), "ultra-client-"));
+  try {
+    for (const version of ["old", "new"]) {
+      mkdirSync(join(base, version));
+      writeFileSync(join(base, version, "herdr"), `console.log('${version}')`);
+    }
+    const cached = activateMacClient(base, join(base, "old"));
+    assert.equal(execFileSync(process.execPath, [cached], { encoding: "utf8" }).trim(), "old");
+    assert.equal(activateMacClient(base, join(base, "new")), cached);
+    assert.equal(execFileSync(process.execPath, [cached], { encoding: "utf8" }).trim(), "new");
+    assert.match(readFileSync(join(base, "old", "herdr"), "utf8"), /old/);
+    assert.throws(() => activateMacClient(base, join(base, "missing")), /missing/);
+    assert.equal(execFileSync(process.execPath, [cached], { encoding: "utf8" }).trim(), "new");
+  } finally { rmSync(base, { recursive: true, force: true }); }
+});
 
 test("release selects the execution platform and rejects unsupported architectures", () => {
   assert.equal(clientAsset("darwin", "arm64").file, "herdr-client-darwin-arm64.tar.gz");

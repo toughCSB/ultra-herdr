@@ -1,5 +1,10 @@
 # Herdr 0.9.1 companion client
 
+v3.0.16의 전체 source patch는 `herdr-0.9.1-ultra-3.0.16.patch`입니다.
+한글/CJK의 보이지 않는 두 번째 칸이 retained update에서 기본 배경으로 초기화되는
+경우에도 메시지 인식을 유지하며, 명시적인 메시지 배경의 빈 여백을 포함합니다.
+원본 PTY와 wire schema는 변경하지 않습니다. 아래 3.0.15 설명은 이전 버전 참고입니다.
+
 v3.0.15의 전체 source patch는 `herdr-0.9.1-ultra-3.0.15.patch`입니다.
 공식 v0.9.1 기반 위에 적용하며 이전 patch와 중복 적용하지 않습니다.
 기존 sidebar/원격 테마 분리를 유지하고, 플러그인의 `ultra_user_message_*`,
