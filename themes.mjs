@@ -2,6 +2,8 @@ const blue = {
   colors: {
     panel_bg: "#000000",
     sidebar_bg: "#1d4263",
+    surface0: "#24283b",
+    surface1: "#414868",
     surface_dim: "#ffffff",
     overlay0: "#a7dff9",
     overlay1: "#ddf4ff",
@@ -27,6 +29,8 @@ const pink = {
     ...blue.colors,
     panel_bg: "#fffafa",
     sidebar_bg: "#ffebea",
+    surface0: "#f5dce8",
+    surface1: "#fbe8f1",
     surface_dim: "#30252b",
     overlay0: "#705d67",
     overlay1: "#480d30",

@@ -116,3 +116,13 @@ a sparse retained-update replay cover the full-frame-to-patch regression.
 Mac launchers use an atomically selected `current/herdr` symlink so a cached
 Ghostty command resolves the current installed client when opening a new window.
 Existing clients still need reopening after the initial stable-path migration.
+
+### Pink control surfaces (3.0.17)
+
+Pink owns surface0 (#f5dce8) and surface1 (#fbe8f1) as well as panel_bg.
+These tokens are used by rename/new-tab inputs, neutral buttons and inactive
+tab labels. All text, overlay0 and overlay1 combinations meet 4.5:1 contrast.
+Blue and RED explicitly restore the former Tokyo Night fallback values
+#24283b / #414868 when switching away from Pink. Active controls keep their
+existing accent background and panel-contrast foreground. No companion
+runtime change is required; plugin 3.0.17 uses companion 3.0.16.

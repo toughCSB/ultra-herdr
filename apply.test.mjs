@@ -8,6 +8,20 @@ import { applyTheme, herdrConfigPath, reloadLocalConfig, shouldSyncOmoTheme } fr
 import { getTheme } from "./themes.mjs";
 import { terminalSettingsPath } from "./font.mjs";
 
+test("Pink control surfaces persist and restore when switching back to Blue or RED", () => {
+  const seed = '[theme]\nname="tokyo-night"\nauto_switch=false\n[theme.custom]\n';
+  const pink = applyTheme(seed, "pink");
+  assert.match(pink, /surface0 = "#f5dce8"/);
+  assert.match(pink, /surface1 = "#fbe8f1"/);
+  for (const name of ["blue", "red"]) {
+    const restored = applyTheme(pink, name);
+    assert.match(restored, /surface0 = "#24283b"/);
+    assert.match(restored, /surface1 = "#414868"/);
+    assert.equal(restored, applyTheme(seed, name));
+    assert.equal(applyTheme(restored, "pink"), pink);
+  }
+});
+
 test("palette-only Windows preset updates the terminal background while preserving font and command", () => {
   const directory = mkdtempSync(join(tmpdir(), "ultra-herdr-preset-"));
   try {

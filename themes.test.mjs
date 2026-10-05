@@ -2,9 +2,24 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { getTheme } from "./themes.mjs";
 
+test("Pink popup inputs, secondary buttons and inactive tabs have readable surfaces", () => {
+  const p = getTheme("pink").colors;
+  const luminance = hex => hex.slice(1).match(/../g)
+    .map(x => parseInt(x, 16) / 255)
+    .map(x => x <= 0.04045 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4)
+    .reduce((n, x, i) => n + x * [0.2126, 0.7152, 0.0722][i], 0);
+  for (const background of [p.surface0, p.surface1]) {
+    assert.match(background || "", /^#[a-f0-9]{6}$/, "Pink must override inherited dark surfaces");
+    for (const foreground of [p.text, p.overlay0, p.overlay1]) {
+      const a = luminance(foreground), b = luminance(background);
+      assert.ok((Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05) >= 4.5, `${foreground} on ${background}`);
+    }
+  }
+});
+
 test("blue remains the current Herdr palette and sidebar row colors", () => {
   assert.deepEqual(getTheme().colors, {
-    panel_bg: "#000000", sidebar_bg: "#1d4263", surface_dim: "#ffffff",
+    panel_bg: "#000000", sidebar_bg: "#1d4263", surface0: "#24283b", surface1: "#414868", surface_dim: "#ffffff",
     overlay0: "#a7dff9", overlay1: "#ddf4ff", subtext0: "#d3ecfb",
     accent: "#7fd3ff", active_row_bg: "#3977aa", selection_bg: "#4a85b5",
     text: "#ffffff", red: "#ff3030", yellow: "#ffff00",
