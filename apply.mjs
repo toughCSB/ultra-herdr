@@ -8,6 +8,7 @@ import { start, syncLabels } from "./labels.mjs";
 import { providerTokenCell, workspaceProviderKeys } from "./providers.mjs";
 import { getTheme } from "./themes.mjs";
 import { syncOmoTheme } from "./omo-theme.mjs";
+import { syncMarkdownViewers } from "./markdown.mjs";
 
 function sidebar(theme) {
   const sidebarText = theme.sidebarText;
@@ -127,6 +128,7 @@ export function applyPalette(name = getThemeName(), size = getFontSize()) {
     const content = syncOmoTheme(name);
     if (content.changedSelection) console.log("OMO theme selected; existing built-in-theme sessions update on their next safe config reload.");
   }
+  syncMarkdownViewers(name);
   reloadLocalConfig();
 }
 

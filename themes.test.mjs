@@ -73,8 +73,7 @@ test("Pink terminal palette has readable colors against its light surface", () =
     assert.ok((luminance(pink.colors.panel_bg) + 0.05) / (luminance(color) + 0.05) >= 4.5, color);
   }
   assert.ok((luminance("#ffffff") + 0.05) / (luminance(pink.colors.selection_bg) + 0.05) >= 7);
-  assert.equal(getTheme("red").terminalPalette, undefined);
-  assert.equal(getTheme("blue").terminalPalette, undefined);
+
 });
 
 test("unknown theme names fail rather than selecting an implicit fallback", () => {
@@ -105,3 +104,16 @@ test("RED uses the supplied swatches and keeps lifecycle colors", () => {
     assert.ok((luminance(foreground) + 0.05) / (luminance(background) + 0.05) >= 4.5);
   }
 });
+
+for (const name of ["red", "blue"]) {
+  test(`${name} terminal palette makes dark Markdown body readable`, () => {
+    const theme = getTheme(name);
+    const luminance = hex => hex.slice(1).match(/../g).map(x => parseInt(x, 16) / 255)
+      .map(x => x <= 0.04045 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4)
+      .reduce((n, x, i) => n + x * [0.2126, 0.7152, 0.0722][i], 0);
+    assert.equal(theme.terminalPalette.length, 9);
+    for (const foreground of theme.terminalPalette) {
+      assert.ok((luminance(foreground) + 0.05) / (luminance(theme.colors.panel_bg) + 0.05) >= 4.5);
+    }
+  });
+}

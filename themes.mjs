@@ -19,6 +19,10 @@ const blue = {
   },
   userMessage: { background: "#a8e1fb", foreground: "#0b2c45" },
   codeBlock: { background: "#123b70", foreground: "#e1efff" },
+  terminalPalette: [
+    "#d4d4d4", "#ff9595", "#91d99b", "#f0d070", "#91caff",
+    "#c6a7f6", "#80dce8", "#b8cce0", "#f4a0bf",
+  ],
   badge: "#7fdfff",
   title: "#d3ecfb",
   separator: "#6f97b8",
@@ -84,6 +88,10 @@ const red = {
   },
   userMessage: { background: "#ffb3b8", foreground: "#650d18" },
   codeBlock: { background: "#e9ddff", foreground: "#302044" },
+  terminalPalette: [
+    "#fff0f3", "#ff9595", "#91d99b", "#f0d070", "#91caff",
+    "#c6a7f6", "#80dce8", "#d4bfc8", "#ffb3b8",
+  ],
   badge: "#ff595e",
   title: "#fff0f3",
   separator: "#ff595e",

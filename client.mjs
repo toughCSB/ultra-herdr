@@ -5,6 +5,7 @@ import { homedir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { terminalJson, terminalSettingsPath } from "./font.mjs";
+import { activateWindowsClient } from "./windows-launcher.mjs";
 
 const release = JSON.parse(readFileSync(new URL("./client-release.json", import.meta.url), "utf8"));
 
@@ -69,6 +70,7 @@ export async function installClient() {
     renameSync(staging, directory);
   }
   if (process.platform === "win32") {
+    activateWindowsClient(base, binary);
     const path = terminalSettingsPath();
     const settings = terminalJson(readFileSync(path, "utf8"));
     const profile = settings.profiles.list.find(item => item.name === "Herdr");

@@ -47,7 +47,8 @@ test("workspace terminal colors come from the execution PC and update when its t
   assert.equal(workspace.tokens.ultra_terminal_bg, "#0b0b0e");
   assert.equal(workspace.tokens.ultra_code_block_bg, "#e9ddff");
   assert.equal(workspace.tokens.ultra_code_block_fg, "#302044");
-  assert.equal(workspace.tokens.ultra_terminal_palette, undefined);
+  assert.equal(workspace.tokens.ultra_terminal_palette.split(",").length, 9);
+  assert.ok(workspace.tokens.ultra_terminal_palette.startsWith("#fff0f3,"));
   assert.equal(workspace.tokens.ultra_user_message_bg, "#ffb3b8");
   assert.equal(workspace.tokens.ultra_user_message_fg, "#650d18");
   await syncLabels({ run, themeName: "blue" });

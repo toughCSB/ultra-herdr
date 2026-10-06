@@ -1,6 +1,6 @@
 # ultra-herdr
 
-**Herdr plugin v3.0.17 — PC별 Blue / Pink / RED 작업공간 테마와 목록 개선 플러그인**
+**Herdr plugin v3.0.18 — PC별 Blue / Pink / RED 작업공간 테마와 목록 개선 플러그인**
 
 `ultra-herdr`는 Herdr 0.9.1용 **로컬 전용** 플러그인입니다. 설치한 그 PC의 Herdr
 설정, 전용 터미널 글꼴 크기, OMO 사용자 테마만 바꿉니다. 복제 경로는 자유이며,
@@ -53,7 +53,15 @@ v3.0.17은 Pink의 새 탭 입력란, 초기화/취소 버튼, 비활성 탭이 
 물려받던 문제를 수정합니다. `surface0=#f5dce8`, `surface1=#fbe8f1`로 밝은 로즈
 배경을 사용하고 진한 글자와의 대비를 4.5:1 이상 확보합니다. 선택된 탭과 저장
 버튼은 진한 핑크와 밝은 글자입니다. Blue/RED로 전환하면 기존 어두운 배경으로
-복원됩니다. Companion client는 검증된 3.0.16을 그대로 사용합니다.
+복원됩니다.
+
+v3.0.18은 파일 sidebar의 Markdown preview와 standalone Glow의 밝기를 실행 PC
+테마에 맞춥니다. Blue/RED의 어두운 본문에도 4.5:1 이상 대비 보정을 적용하며
+이미 읽을 수 있는 색상, 원본 글자·링크·대화/코드 배경은 보존합니다. Windows의
+새 로컬 PowerShell에서 `herdr` 또는 `herdr --session 이름`을 실행하면 동일한
+companion client가 열립니다. API/server/bridge/update 명령과 SSH는 공식 실행
+경로를 유지합니다. 사용자 PowerShell profile은 백업 후 관리 블록만 추가합니다.
+이미 열린 PowerShell은 새 창을 열어야 이 실행 경로가 반영됩니다.
 
 ## 제공 기능
 

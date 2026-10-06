@@ -1,5 +1,10 @@
 # Herdr 0.9.1 companion client
 
+v3.0.18의 전체 source patch는 `herdr-0.9.1-ultra-3.0.18.patch`입니다.
+Blue/RED의 어두운 terminal에도 palette 기반 대비 보정을 적용합니다. 실행 PC
+배경과 반대 밝기의 오래된 palette는 무시합니다. 실제 Glow 3.0.0 Markdown 본문·표·
+코드 출력 및 SV Claude 출력 재생 검사를 포함합니다. 아래 patch와 중복 적용하지 않습니다.
+
 v3.0.16의 전체 source patch는 `herdr-0.9.1-ultra-3.0.16.patch`입니다.
 한글/CJK의 보이지 않는 두 번째 칸이 retained update에서 기본 배경으로 초기화되는
 경우에도 메시지 인식을 유지하며, 명시적인 메시지 배경의 빈 여백을 포함합니다.
