@@ -14,7 +14,7 @@ import { syncSidebarTheme } from "./sidebar-theme.mjs";
 function sidebar(theme) {
   const sidebarText = theme.sidebarText;
   const workingColor = theme.workingColor || theme.colors.yellow;
-  const status = `{ token = "state_text", bold = true, dim = false, rules = [${Object.entries(theme.sidebarStates).map(([name, paint]) => `{ starts_with = "${name}", fg = "${paint.foreground}" }`).join(", ")}] }`;
+  const status = `{ token = "state_text", bold = true, dim = false, rules = [{ starts_with = "blocked", fg = "${theme.colors.red}" }, { starts_with = "working", fg = "${workingColor}" }, { starts_with = "done", fg = "${theme.colors.green}" }, { starts_with = "idle", fg = "${theme.colors.green}" }, { starts_with = "unknown", fg = "${theme.sidebarText ? theme.colors.overlay0 : "#b8cce0"}" }] }`;
   const activity = `{ token = "$ultra_activity", fg = "${workingColor}", bold = true }`;
   const providerCell = providerTokenCell("$skyline_provider", theme);
   const providerRows = [];

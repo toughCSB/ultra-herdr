@@ -213,13 +213,13 @@ test("theme switching recolors UI but preserves vendor and lifecycle colors", ()
   assert.match(pink, /equals = "\[SV\]", fg = "#480d30"/);
   assert.match(pink, /token = "terminal_title_stripped", fg = "#480d30"/);
   assert.match(pink, /\$ultra_activity", fg = "#d65a00"/);
-  assert.match(pink, /starts_with = "working", fg = "#914600"/);
+  assert.match(pink, /starts_with = "working", fg = "#d65a00"/);
   assert.match(pink, /token = "\$ultra_provider_1", bold = true, fg = "#16161c"/);
   const agentRows = pink.split("[ui.sidebar.agents]")[1].split("[ui.sidebar.spaces]")[0];
   const providerRow = agentRows.split("\n").find(line => line.includes("$skyline_branch"));
   assert.ok(providerRow.indexOf('"state_icon"') < providerRow.indexOf('token = "state_text"'));
   assert.ok(providerRow.indexOf('token = "state_text"') < providerRow.indexOf('token = "$skyline_provider"'));
-  assert.match(providerRow, /starts_with = "working", fg = "#914600"/);
+  assert.match(providerRow, /starts_with = "working", fg = "#d65a00"/);
   assert.match(pink, /"state_icon"/);
   for (const color of [
     "#ff3030", "#d65a00", "#168a45", "#16161c", "#d97757", "#586876",

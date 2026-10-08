@@ -1,9 +1,9 @@
 const darkStates = {
-  idle: { icon: "○", foreground: "#c7d2e0", background: "#354252" },
-  working: { icon: "◔", foreground: "#fcd34d", background: "#493614" },
-  blocked: { icon: "!", foreground: "#fda4af", background: "#50212b" },
-  done: { icon: "✓", foreground: "#6ee7b7", background: "#103d30" },
-  unknown: { icon: "?", foreground: "#c7d2e0", background: "#354252" },
+  idle: { icon: "●", foreground: "#00ff66" },
+  working: { icon: "▶", foreground: "#ffff00", row_background: "#665014" },
+  blocked: { icon: "▲", foreground: "#ff3030", row_background: "#380914" },
+  done: { icon: "✔", foreground: "#00ff66", row_background: "#126042" },
+  unknown: { icon: "◆", foreground: "#b8cce0" },
 };
 
 const blue = {
@@ -39,11 +39,11 @@ const blue = {
 
 const pink = {
   sidebarStates: {
-    idle: { icon: "○", foreground: "#604f5a", background: "#f0e4e9" },
-    working: { icon: "◔", foreground: "#914600", background: "#fff0d3" },
-    blocked: { icon: "!", foreground: "#a61b29", background: "#ffe0e5" },
-    done: { icon: "✓", foreground: "#116c46", background: "#dcf5e7" },
-    unknown: { icon: "?", foreground: "#604f5a", background: "#f0e4e9" },
+    idle: { icon: "●", foreground: "#168a45" },
+    working: { icon: "▶", foreground: "#d65a00", row_background: "#fff3c2" },
+    blocked: { icon: "▲", foreground: "#ff3030", row_background: "#ffe3e8" },
+    done: { icon: "✔", foreground: "#168a45", row_background: "#d4f5de" },
+    unknown: { icon: "◆", foreground: "#705d67" },
   },
   colors: {
     ...blue.colors,

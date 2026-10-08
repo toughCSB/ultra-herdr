@@ -13,16 +13,23 @@ const luminance = hex => hex.slice(1).match(/../g).map(v => parseInt(v, 16) / 25
 const contrast = (a, b) => (Math.max(luminance(a), luminance(b)) + .05) / (Math.min(luminance(a), luminance(b)) + .05);
 
 for (const name of ["blue", "pink", "red"]) {
-  test(`${name} statuses remain distinct and readable on ordinary and selected rows`, () => {
+  test(`${name} restores status colors and distinguishes attention rows without text badges`, () => {
     const theme = getTheme(name), data = sidebarTheme(name);
     const foreground = theme.sidebarText || theme.colors.text;
     assert.equal(new Set(Object.values(data.states).map(p => p.icon)).size, 5);
-    assert.notEqual(data.states.done.foreground, data.states.idle.foreground);
+    assert.equal(data.version, 2);
+    assert.equal(data.states.done.foreground, theme.colors.green);
+    assert.equal(data.states.idle.foreground, theme.colors.green);
+    assert.notEqual(data.states.done.row_background, data.states.idle.row_background);
+    assert.equal(new Set(["working", "blocked", "done"].map(status => data.states[status].row_background)).size, 3);
     for (const paint of Object.values(data.states)) {
-      assert.ok(contrast(paint.foreground, paint.background) >= 4.5);
+      assert.equal(paint.background, undefined);
+      assert.ok(contrast(paint.foreground, paint.row_background) >= (name === "pink" ? 3 : 4.5));
       assert.ok(contrast(foreground, paint.row_background) >= 4.5);
       assert.ok(contrast(foreground, theme.colors.active_row_bg) >= 4.5);
     }
+    assert.equal(data.states.working.foreground, theme.workingColor || theme.colors.yellow);
+    assert.equal(data.states.blocked.foreground, theme.colors.red);
     const config = applyTheme('[theme]\nname="tokyo-night"\nauto_switch=false\n[theme.custom]\n# >>> ultra-herdr sidebar\n[ui.sidebar.agents]\nrows=[]\n# <<< ultra-herdr sidebar\n', name);
     assert.ok(config.includes(`starts_with = "done", fg = "${data.states.done.foreground}"`));
     assert.ok(config.includes(`starts_with = "idle", fg = "${data.states.idle.foreground}"`));

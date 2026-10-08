@@ -2,22 +2,15 @@ import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "
 import { dirname, join } from "node:path";
 import { getTheme } from "./themes.mjs";
 
-function tint(background, foreground) {
-  const channel = (hex, index) => parseInt(hex.slice(index, index + 2), 16);
-  return "#" + [1, 3, 5].map(index => Math.round(
-    channel(background, index) * 0.88 + channel(foreground, index) * 0.12,
-  ).toString(16).padStart(2, "0")).join("");
-}
-
 export function sidebarTheme(name) {
   const theme = getTheme(name);
   return {
-    version: 1,
+    version: 2,
     sidebar_background: theme.colors.sidebar_bg,
     states: Object.fromEntries(Object.entries(theme.sidebarStates).map(([status, paint]) => [status, {
       ...paint,
-      row_background: ["idle", "unknown"].includes(status)
-        ? theme.colors.sidebar_bg : tint(theme.colors.sidebar_bg, paint.foreground),
+      icon_foreground: status === "unknown" ? theme.colors.overlay0 : paint.foreground,
+      row_background: paint.row_background || theme.colors.sidebar_bg,
     }])),
   };
 }
