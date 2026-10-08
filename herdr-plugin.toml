@@ -1,6 +1,6 @@
 id = "local.ultra-herdr"
 name = "ultra-herdr"
-version = "3.0.18"
+version = "3.0.19"
 min_herdr_version = "0.9.1"
 description = "Local-only Herdr themes, provider icons, grouped projects, and whole-window font settings"
 platforms = ["macos", "windows"]

@@ -1,5 +1,18 @@
 # Herdr 0.9.1 companion client
 
+v3.0.19의 전체 source patch는 `herdr-0.9.1-ultra-3.0.19.patch`입니다.
+공식 v0.9.1에 한 번만 적용하며 이전 전체 patch와 중복 적용하지 않습니다.
+3.0.18의 대화·코드·Markdown 대비 수정을 포함하고, 로컬 플러그인이 관리하는
+`plugins/config/local.ultra-herdr/sidebar-status.json`에서 상태별 배지와 행 배경을
+읽습니다. 파일은 시작/설정 갱신 시에만 읽으며 렌더 루프에서 파일 I/O를 하지 않습니다.
+선택 배경이 상태 배지를 덮지 않도록 렌더 순서를 조정하고, 좁은 목록에서도 상태
+문구에 공간을 먼저 배정합니다. API/config TOML/wire schema와 서버는 변경하지 않습니다.
+새 설정 파일이 없거나 다른 테마의 오래된 파일이면 기존 표시로 돌아갑니다.
+검증은 세 테마 × 다섯 상태 × 선택/미선택 × 로컬/원격 × 24/32/36열, workspace와
+접힌 목록, Done→Idle 확인 처리, 원격 terminal/local sidebar 색상 분리를 포함합니다.
+
+아래는 이전 버전 참고입니다.
+
 v3.0.18의 전체 source patch는 `herdr-0.9.1-ultra-3.0.18.patch`입니다.
 Blue/RED의 어두운 terminal에도 palette 기반 대비 보정을 적용합니다. 실행 PC
 배경과 반대 밝기의 오래된 palette는 무시합니다. 실제 Glow 3.0.0 Markdown 본문·표·

@@ -9,11 +9,12 @@ import { providerTokenCell, workspaceProviderKeys } from "./providers.mjs";
 import { getTheme } from "./themes.mjs";
 import { syncOmoTheme } from "./omo-theme.mjs";
 import { syncMarkdownViewers } from "./markdown.mjs";
+import { syncSidebarTheme } from "./sidebar-theme.mjs";
 
 function sidebar(theme) {
   const sidebarText = theme.sidebarText;
   const workingColor = theme.workingColor || theme.colors.yellow;
-  const status = `{ token = "state_text", bold = true, dim = false, rules = [{ starts_with = "blocked", fg = "${theme.colors.red}" }, { starts_with = "working", fg = "${workingColor}" }, { starts_with = "done", fg = "${theme.colors.green}" }, { starts_with = "idle", fg = "${theme.colors.green}" }, { starts_with = "unknown", fg = "${theme.sidebarText ? theme.colors.overlay0 : "#b8cce0"}" }] }`;
+  const status = `{ token = "state_text", bold = true, dim = false, rules = [${Object.entries(theme.sidebarStates).map(([name, paint]) => `{ starts_with = "${name}", fg = "${paint.foreground}" }`).join(", ")}] }`;
   const activity = `{ token = "$ultra_activity", fg = "${workingColor}", bold = true }`;
   const providerCell = providerTokenCell("$skyline_provider", theme);
   const providerRows = [];
@@ -33,7 +34,7 @@ function sidebar(theme) {
   "",
   "[ui.sidebar.spaces]",
   "row_gap = 0",
-  `rows = [["state_icon", ${activity}, { token = "workspace", bold = true, fg = "${sidebarText || "#ffffff"}" }, { token = "$ultra_session_count", fg = "${sidebarText || theme.title}" }],`,
+  `rows = [["state_icon", ${status}, ${activity}, { token = "workspace", bold = true, fg = "${sidebarText || "#ffffff"}" }, { token = "$ultra_session_count", fg = "${sidebarText || theme.title}" }],`,
   ...providerRows,
   `  ["branch", "git_status", { token = "$skyline_separator", fg = "${theme.separator}", bold = false, dim = false }]]`,
   "# <<< ultra-herdr sidebar",
@@ -129,6 +130,7 @@ export function applyPalette(name = getThemeName(), size = getFontSize()) {
     if (content.changedSelection) console.log("OMO theme selected; existing built-in-theme sessions update on their next safe config reload.");
   }
   syncMarkdownViewers(name);
+  syncSidebarTheme(name, configPath);
   reloadLocalConfig();
 }
 

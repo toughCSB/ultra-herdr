@@ -1,6 +1,6 @@
 # ultra-herdr
 
-**Herdr plugin v3.0.18 — PC별 Blue / Pink / RED 작업공간 테마와 목록 개선 플러그인**
+**Herdr plugin v3.0.19 — PC별 Blue / Pink / RED 작업공간 테마와 목록 개선 플러그인**
 
 `ultra-herdr`는 Herdr 0.9.1용 **로컬 전용** 플러그인입니다. 설치한 그 PC의 Herdr
 설정, 전용 터미널 글꼴 크기, OMO 사용자 테마만 바꿉니다. 복제 경로는 자유이며,
@@ -63,6 +63,15 @@ companion client가 열립니다. API/server/bridge/update 명령과 SSH는 공�
 경로를 유지합니다. 사용자 PowerShell profile은 백업 후 관리 블록만 추가합니다.
 이미 열린 PowerShell은 새 창을 열어야 이 실행 경로가 반영됩니다.
 
+v3.0.19는 세 테마의 사이드바 상태를 서로 다른 아이콘·배지·행 배경으로 구분합니다.
+Idle은 회색 `○`, Working은 노랑/주황 `◔`, Blocked는 빨강 `!`, Done은
+에메랄드 `✓`, Unknown은 중립색 `?`입니다. 선택한 항목은 기존 테마의 선택 배경과
+`›` 표시를 사용하며 상태 배지는 그대로 유지합니다. Done은 새 답변 확인 대기이며,
+답변을 확인하면 기존 Herdr 동작대로 Idle로 바뀝니다. sidebar 글자는 실제 배경에
+대해 4.5:1 이상 대비를 확보하고, provider 로고의 고유색은 보존합니다. 설정 적용 시
+보는 PC의 Herdr 설정 폴더에 `plugins/config/local.ultra-herdr/sidebar-status.json`을
+관리하며, terminal 본문·대화·코드 색상은 기존 실행 PC 기준을 유지합니다.
+
 ## 제공 기능
 
 - **촘촘하고 구분된 목록:** 불필요한 빈 행을 없애고, 프로젝트 경계에는 얇은 실선,
@@ -78,15 +87,15 @@ companion client가 열립니다. API/server/bridge/update 명령과 SSH는 공�
 - **다중 세션 개수:** machines/spaces 프로젝트 제목 옆의 `2 sessions`처럼
   감지된 agent 세션 수를 표시합니다. 같은 프로바이더의 여러 세션도 각각 셉니다.
   빈 터미널 탭 수와는 다르며, 세션 제목은 agents 목록에서 확인합니다.
-  machines의 중복 상태 텍스트 행을 없애고 branch/git 정보를 구분선 행에 합쳐
-  프로젝트마다 한 행 더 촘촘해집니다. 상태 아이콘과 얇은 구분선은 유지합니다.
+  machines의 상태 배지는 프로젝트 제목과 같은 행에 표시하고 branch/git 정보를
+  구분선 행에 합쳐 목록을 촘촘하게 유지합니다.
 - **상태를 꾸미지 않음:** `working`, `blocked`, `idle`/`done`, `unknown`은 실제
   Herdr/agent 상태입니다. 실행 중인 항목을 가짜 `Working`으로 고정하지 않습니다.
 - **Working 스피너:** 실제 Working 세션과 해당 프로젝트에만 작은 회전 표시를
   추가합니다. Herdr 시작 훅의 라벨러가 로컬 IPC로 현재 상태를 읽으며, 프레임마다
   CLI 프로세스를 실행하지 않습니다. 작업 종료 시 표시를 지우고, 라벨러가 비정상
-  종료되더라도 activity metadata는 2초 뒤 만료됩니다. Pink 상태 아이콘은
-  꽉 찬 원형으로 표시하며 Working 아이콘은 진한 주황색을 사용합니다.
+  종료되더라도 activity metadata는 2초 뒤 만료됩니다. 상태별 고정 아이콘과
+  회전하는 activity 표시는 함께 사용합니다.
 - **Radar 런타임 없음:** 독립 아이콘 글꼴과 글리프 매핑만 사용합니다. Radar 플러그인,
   정렬기, 상태 애니메이터, 백그라운드 런타임은 필요하지 않습니다.
 - **전체 창 글꼴 크기:** 기본 `14pt`, 허용 범위 `8–36pt`이며 Herdr 전용 창의
@@ -97,15 +106,15 @@ companion client가 열립니다. API/server/bridge/update 명령과 SSH는 공�
 - **OMO 본문 팔레트:** Pink는 밝은 핑크 메시지·도구 상자와 진한 핑크 강조색을
   적용합니다. Blue/RED의 기존 연동 동작은 유지됩니다.
 
-상태색은 테마와 별도 정보입니다. Pink `working`은 주황 `#d65a00`, Blue/RED의
-`working`은 노랑 `#ffff00`입니다. `blocked`는 빨강, `idle`/`done`은 녹색,
-`unknown`은 회색입니다. Pink provider icon/name은 저장된
+상태색은 테마와 별도 정보입니다. Pink의 Working 배지는 진한 주황 `#914600`,
+Blue/RED는 밝은 노랑 `#fcd34d`입니다. Blocked는 빨강, Done은 에메랄드,
+Idle과 Unknown은 중립색으로 표시하며 서로 다른 아이콘을 사용합니다.
+Pink provider icon/name은 저장된
 Radar 브랜드 팔레트로 표시하고, Blue/RED는 기존 provider 색을 사용합니다.
 
 Pink는 참고 화면의 사이드바 `#ffebea`, 선택 배경 `#febab9`를 사용합니다.
 메인 terminal과 OMO 본문에도 해당 실행 PC의 Pink 설정을 적용합니다. 사이드바 글자는 진한 색으로
-표시하고 프로바이더와 상태 아이콘은 꽉 찬 원형으로 표시하되 기존 상태별
-아이콘 색을 유지합니다(Working 아이콘은 주황). Working 문구와 활동 표시도
+표시하고 상태 아이콘은 세 테마에서 동일한 모양으로 구분합니다. Working 활동 표시도
 주황색입니다. Codex, OpenCode 및 알 수 없는 provider의 기본색은 진한 잉크,
 알려진 provider는 기존 Radar 팔레트의 고유색을 사용합니다. 상태 묶음을
 provider 앞에 배치합니다. 전체
@@ -114,12 +123,12 @@ sidebar chrome 글자 처리에는
 
 ```text
 [MyPC] · 웹 프로젝트
-  ├─ ● working · Codex
+  ├─ ◔ WORKING · Codex
   ·················
-  └─ ● idle · OMO
+  └─ ✓ DONE · OMO
   ──────────────────
 [MyPC] · 문서 프로젝트
-  └─ ● blocked · Claude
+  └─ ! BLOCKED · Claude
 ```
 
 ## 스크린샷

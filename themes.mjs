@@ -1,4 +1,13 @@
+const darkStates = {
+  idle: { icon: "○", foreground: "#c7d2e0", background: "#354252" },
+  working: { icon: "◔", foreground: "#fcd34d", background: "#493614" },
+  blocked: { icon: "!", foreground: "#fda4af", background: "#50212b" },
+  done: { icon: "✓", foreground: "#6ee7b7", background: "#103d30" },
+  unknown: { icon: "?", foreground: "#c7d2e0", background: "#354252" },
+};
+
 const blue = {
+  sidebarStates: darkStates,
   colors: {
     panel_bg: "#000000",
     sidebar_bg: "#1d4263",
@@ -29,6 +38,13 @@ const blue = {
 };
 
 const pink = {
+  sidebarStates: {
+    idle: { icon: "○", foreground: "#604f5a", background: "#f0e4e9" },
+    working: { icon: "◔", foreground: "#914600", background: "#fff0d3" },
+    blocked: { icon: "!", foreground: "#a61b29", background: "#ffe0e5" },
+    done: { icon: "✓", foreground: "#116c46", background: "#dcf5e7" },
+    unknown: { icon: "?", foreground: "#604f5a", background: "#f0e4e9" },
+  },
   colors: {
     ...blue.colors,
     panel_bg: "#fffafa",
@@ -73,6 +89,7 @@ const pink = {
 };
 
 const red = {
+  sidebarStates: darkStates,
   colors: {
     ...blue.colors,
     panel_bg: "#0b0b0e",

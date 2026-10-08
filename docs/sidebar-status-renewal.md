@@ -48,3 +48,18 @@ Mac/SV/HOME에 접근 가능한 범위에서 설치·실행 결과를 각각 기
 참고: [GitHub Primer](https://primer.style/product/ui-patterns/notification-messaging/),
 [VS Code Theme Color](https://code.visualstudio.com/api/references/theme-color),
 [W3C Use of Color](https://www.w3.org/WAI/WCAG22/Understanding/use-of-color.html).
+
+## 3.0.19 검증 결과
+
+리뉴얼 전 기준 상태와 이 확정안은 `fcf9319`로 먼저 커밋했다.
+플러그인 테스트 83개와 syntax check, Mac shell 테스트 311개 및 protocol 테스트
+146개, Windows shell 테스트 309개 및 protocol 테스트 145개가 통과했다.
+각 플랫폼의 shell 테스트 3개는 기존 ignored 항목이다.
+실제 native Buffer의 모든 일반 글자와 상태 배지에서 대비 4.5:1 이상을 검증했다.
+provider 로고와 장식 구분선은 이 텍스트 대비 보정에서 제외한다.
+
+실제 renderer의 합성 데이터를 별도 뷰어에 표시하여 Blue/Pink/Red의 선택/미선택,
+한글 폭, provider 로고, 다섯 상태를 확인했다. 이 확인은 실제 사용자 창의 캡처가 아니다.
+고정 32×60 사이드바에 1개/15개 행을 반복 렌더링했고, 기존 3.0.18 대비 release
+performance smoke(두 라운드, 각 10초 샘플)가 통과했다. hidden50은 7.580→7.580
+CPU points, visible30은 3.415→3.170이었다. 짧은 샘플의 성능 점검이며 장기 측정은 아니다.
