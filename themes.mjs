@@ -1,13 +1,16 @@
 const darkStates = {
   idle: { icon: "●", foreground: "#00ff66" },
   working: { icon: "▶", foreground: "#ffff00", row_background: "#665014" },
-  blocked: { icon: "▲", foreground: "#ff3030", row_background: "#380914" },
+  blocked: { icon: "▲", foreground: "#ff3030", row_background: "#420006" },
   done: { icon: "✔", foreground: "#00ff66", row_background: "#126042" },
   unknown: { icon: "◆", foreground: "#b8cce0" },
 };
 
 const blue = {
-  sidebarStates: darkStates,
+  sidebarStates: {
+    ...darkStates,
+    blocked: { ...darkStates.blocked, row_background: "#08134f" },
+  },
   colors: {
     panel_bg: "#000000",
     sidebar_bg: "#1d4263",
@@ -41,7 +44,7 @@ const pink = {
   sidebarStates: {
     idle: { icon: "●", foreground: "#168a45" },
     working: { icon: "▶", foreground: "#d65a00", row_background: "#fff3c2" },
-    blocked: { icon: "▲", foreground: "#ff3030", row_background: "#ffe3e8" },
+    blocked: { icon: "▲", foreground: "#ff3030", row_background: "#69002f" },
     done: { icon: "✔", foreground: "#168a45", row_background: "#d4f5de" },
     unknown: { icon: "◆", foreground: "#705d67" },
   },

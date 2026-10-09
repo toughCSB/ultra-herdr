@@ -1,5 +1,8 @@
 # Herdr 0.9.1 companion client
 
+플러그인 3.0.22의 Blocked 색상 조정은 관리 JSON 데이터만 변경하며,
+아래 companion client 3.0.21과 전체 선택 배경 복원을 그대로 사용합니다.
+
 v3.0.21의 전체 source patch는 `herdr-0.9.1-ultra-3.0.21.patch`입니다.
 공식 v0.9.1에 한 번만 적용하며 이전 전체 patch와 중복 적용하지 않습니다.
 사용자 화면 검토를 반영해 3.0.19의 글자별 배지 배경을 없애고, 상태 글자/아이콘의

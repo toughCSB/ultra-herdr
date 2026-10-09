@@ -1,4 +1,4 @@
-# 사이드바 상태 리뉴얼 확정안 — 3.0.21
+# 사이드바 상태 리뉴얼 확정안 — 3.0.22
 
 3.0.19 화면 검토 후 사용자 요청을 반영한 최종 방향이다. 상태 글자별 배경은 제거하고,
 원래 테마의 상태 색을 복원한다. 주목해야 하는 상태는 행 배경과 굵은 채움 아이콘으로 구분한다.
@@ -8,6 +8,9 @@
 
 3.0.21에서는 선택한 섹션의 전체 배경 강조만 기존 방식으로 복원한다.
 3.0.20의 미선택 상태 배경·채움 아이콘·상태 글자색은 그대로 유지한다.
+
+3.0.22에서는 Blocked 행 배경만 Pink `#69002f`, Red `#420006`, Blue `#08134f`로
+변경한다. 선택 영역의 전체 배경 및 원래 선택 색상은 3.0.21 그대로 유지한다.
 
 ## 표시 규칙
 
@@ -33,8 +36,9 @@
 Blue/Red 상태 글자: Working `#ffff00`, Blocked `#ff3030`, Idle/Done `#00ff66`,
 Unknown `#b8cce0`. Pink 상태 글자: Working `#d65a00`, Blocked `#ff3030`,
 Idle/Done `#168a45`, Unknown `#705d67`. Unknown 아이콘은 원래 palette.overlay0를 사용한다.
-행 배경은 Blue/Red Working `#665014`, Blocked `#380914`, Done `#126042`;
-Pink Working `#fff3c2`, Blocked `#ffe3e8`, Done `#d4f5de`이다.
+행 배경은 Blue/Red Working `#665014`, Done `#126042`;
+Blocked는 Blue `#08134f`, Red `#420006`이다.
+Pink Working `#fff3c2`, Blocked `#69002f`, Done `#d4f5de`이다.
 Idle/Unknown은 각 테마의 기본 sidebar 배경이다.
 
 일반 글자/선택 표시는 4.5:1 이상 대비를 검증한다. 원래 상태 색은 임의 보정하지 않는다.
@@ -94,3 +98,12 @@ Mac shell 312개 / protocol 146개, Windows shell 310개 / protocol 145개가 �
 검사했으며, 기존 머신 트리 들여쓰기는 유지했다.
 관리 JSON을 불러온 release performance smoke도 3.0.20 대비 통과했다
 (hidden50 +8.5%, visible30 -3.0%; 두 라운드의 10초 샘플).
+
+## 3.0.22 검증 결과
+
+Blocked 배경 세 값 외의 모든 테마 데이터와 companion release manifest가
+3.0.21과 동일한지 비교했다. plugin 83 tests 및 syntax check가 통과했고,
+새 색상으로 생성한 fixture를 실제 native renderer에 적용한 사이드바 검증 8개가 통과했다.
+선택 영역 전체 배경, 상태 글자·아이콘의 원래 색상, 로컬·원격 및 접힌 목록을 확인했다.
+Pink의 어두워진 Blocked 배경에서도 기존 대비 보정으로 일반 글자 4.5:1 이상을 확인했다.
+검증용 fixture는 실행 후 원상 복원했고, native production 코드와 3.0.21 바이너리는 유지했다.
