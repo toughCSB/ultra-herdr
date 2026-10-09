@@ -1,6 +1,6 @@
 # ultra-herdr
 
-**Herdr plugin v3.0.20 — PC별 Blue / Pink / RED 작업공간 테마와 목록 개선 플러그인**
+**Herdr plugin v3.0.21 — PC별 Blue / Pink / RED 작업공간 테마와 목록 개선 플러그인**
 
 `ultra-herdr`는 Herdr 0.9.1용 **로컬 전용** 플러그인입니다. 설치한 그 PC의 Herdr
 설정, 전용 터미널 글꼴 크기, OMO 사용자 테마만 바꿉니다. 복제 경로는 자유이며,
@@ -63,10 +63,11 @@ companion client가 열립니다. API/server/bridge/update 명령과 SSH는 공�
 경로를 유지합니다. 사용자 PowerShell profile은 백업 후 관리 블록만 추가합니다.
 이미 열린 PowerShell은 새 창을 열어야 이 실행 경로가 반영됩니다.
 
-v3.0.20은 세 테마의 원래 상태 글자·아이콘 색상을 유지하고, Working·Blocked·Done의
+v3.0.21은 세 테마의 원래 상태 글자·아이콘 색상을 유지하고, Working·Blocked·Done의
 행 배경을 금색·로즈/와인색·초록색으로 구분합니다. Idle `●`, Working `▶`, Blocked `▲`,
 Done `✔`, Unknown `◆`는 채움 면적이 큰 굵은 아이콘입니다. 상태 글자에는 별도 배경을
-붙이지 않습니다. 선택한 항목은 왼쪽 테마색 선과 `›`로 표시해 상태 행 배경을 유지합니다.
+붙이지 않습니다. 선택한 섹션은 빈 공간을 포함한 전체 영역에 기존 테마의 선택 배경을
+표시합니다. 상태별 행 배경은 선택하지 않은 항목에 적용됩니다.
 Done은 새 답변 확인 대기이며 확인하면 기존 Herdr 동작대로 Idle로 바뀝니다.
 sidebar 일반 글자는 실제 배경에 대해 4.5:1 이상 대비를 확보합니다. 상태 색상과
 provider 로고의 고유색은 원래 값을 보존합니다. 설정 적용 시
