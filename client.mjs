@@ -41,7 +41,7 @@ export async function installClient() {
   const base = process.platform === "win32"
     ? join(process.env.LOCALAPPDATA, "Programs", "ultra-herdr-client")
     : join(homedir(), ".local/share/ultra-herdr-client");
-  const directory = join(base, `0.9.1-ultra-${release.version}`);
+  const directory = join(base, `${release.baseVersion}-ultra-${release.version}`);
   const binary = join(directory, process.platform === "win32" ? "herdr.exe" : "herdr");
   if (!existsSync(binary)) {
     mkdirSync(base, { recursive: true });

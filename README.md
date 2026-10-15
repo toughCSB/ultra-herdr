@@ -1,10 +1,16 @@
 # ultra-herdr
 
-**Herdr plugin v3.0.22 — PC별 Blue / Pink / RED 작업공간 테마와 목록 개선 플러그인**
+**Herdr plugin v3.0.23 — PC별 Blue / Pink / RED 작업공간 테마와 목록 개선 플러그인**
 
-`ultra-herdr`는 Herdr 0.9.1용 **로컬 전용** 플러그인입니다. 설치한 그 PC의 Herdr
+`ultra-herdr`는 Herdr 0.9.5 기반 companion client를 사용하는 **로컬 전용** 플러그인입니다. 설치한 그 PC의 Herdr
 설정, 전용 터미널 글꼴 크기, OMO 사용자 테마만 바꿉니다. 복제 경로는 자유이며,
 PC 구성이나 네트워크 토폴로지를 가정하지 않습니다.
+
+v3.0.23은 companion client를 공식 Herdr **0.9.5**로 옮겨 Windows OMO의
+Kitty keyboard protocol 입력에서 여러 줄 붙여넣기가 줄마다 전송되던 문제를 해결합니다.
+Unix의 이미지 전달은 명시적으로 설정한 키 또는 빈 bracketed paste에만 반응합니다.
+설치 폴더는 `client-release.json`의 `baseVersion`을 사용하며, 기존 서버와 에이전트
+세션을 종료하지 않고 클라이언트만 교체합니다.
 
 > [!IMPORTANT]
 > **각 설치는 자기 호스트만 변경합니다.** 이 플러그인에는 대상 PC 선택기, SSH
@@ -123,7 +129,7 @@ Pink는 참고 화면의 사이드바 `#ffebea`, 선택 배경 `#febab9`를 사�
 알려진 provider는 기존 Radar 팔레트의 고유색을 사용합니다. 상태 묶음을
 provider 앞에 배치합니다. 전체
 sidebar chrome 글자 처리에는
-[Herdr 0.9.1 클라이언트 패치](client-patches/README.md)를 사용합니다.
+[Herdr 0.9.5 클라이언트 패치](client-patches/README.md)를 사용합니다.
 
 ```text
 [MyPC] · 웹 프로젝트
@@ -154,7 +160,7 @@ sidebar chrome 글자 처리에는
 
 | 항목 | 범위 |
 |---|---|
-| Herdr | **0.9.1**에서 테스트 |
+| Herdr | companion client **0.9.5**, 기존 실행 서버는 유지 |
 | Node.js | **24 이상** |
 | npm 의존성 | 없음 |
 | 플랫폼 | macOS, Windows |
@@ -295,7 +301,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\create-local-shortcut.
 Mac 세션을 선택해 그 메뉴를 열면 Mac 설정이 열리므로, Mac의 OMO 내용색만 바뀌고
 HOME 사이드바는 유지될 수 있습니다. 팝업의 **설정 대상 PC**를 확인하세요.
 
-### Herdr 0.9.1에서 반드시 알아야 할 점
+### 원격 workspace에서 설정을 적용할 때 알아야 할 점
 
 원격 workspace에서 실행한 Herdr plugin action은 **viewer PC가 아니라 원격
 workspace의 HOST에서 실행**됩니다. 원격 workspace를 보고 있을 때 테마 action을

@@ -1,4 +1,25 @@
-# Herdr 0.9.1 companion client
+# Herdr companion client
+
+v3.0.23은 공식 Herdr **v0.9.5**(`2ecf19a9`) 기반입니다.
+전체 패치 `herdr-0.9.5-ultra-3.0.23.patch`를 공식 v0.9.5에 한 번만 적용합니다.
+이전 0.9.1 전체 패치와 중복 적용하지 않습니다.
+Zig **0.16.0**으로 vendored libghostty-vt를 새로 빌드해야 하며,
+0.9.1에서 만든 prebuilt 라이브러리는 사용하지 않습니다.
+
+Windows의 Kitty keyboard protocol 입력에서 여러 줄 붙여넣기가 줄마다 전송되던
+문제를 upstream 0.9.5 수정으로 해결합니다. 기존 로컬 사이드바/실행 PC terminal
+색상 분리, 전체 선택 배경, 상태 배경, 대화·코드·Markdown 및 이미지 붙여넣기 패치를 포함합니다.
+설치 폴더는 `client-release.json`의 `baseVersion`과 `version`으로 구성합니다.
+Windows 배포에는 공식 0.9.5의 `conpty/` 파일과 라이선스를 함께 보관합니다.
+클라이언트 교체 과정에서 실행 중인 서버와 에이전트 세션은 종료하지 않습니다.
+
+전달받은 전체 패치에서 Unix helper의 무조건적인 `Ctrl+V`/`Alt+V` fallback만
+제거하여 upstream의 명시적 `remote_image_paste_key` 계약을 복원했습니다.
+bridge-active guard와 빈 bracketed paste 동작, 기존 회귀 테스트는 유지합니다.
+Windows helper와 전달받은 Windows zip은 변경하지 않았습니다.
+수정된 전체 패치는 깨끗한 공식 v0.9.5에 한 번 적용하여 소스 일치까지 검증했습니다.
+
+아래는 이전 버전 참고입니다.
 
 플러그인 3.0.22의 Blocked 색상 조정은 관리 JSON 데이터만 변경하며,
 아래 companion client 3.0.21과 전체 선택 배경 복원을 그대로 사용합니다.
