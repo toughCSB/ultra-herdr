@@ -1,12 +1,21 @@
 # ultra-herdr
 
-**Herdr plugin v3.0.23 — PC별 Blue / Pink / RED 작업공간 테마와 목록 개선 플러그인**
+**Herdr plugin v3.0.24 — PC별 Blue / Pink / RED 작업공간 테마와 목록 개선 플러그인**
 
 `ultra-herdr`는 Herdr 0.9.5 기반 companion client를 사용하는 **로컬 전용** 플러그인입니다. 설치한 그 PC의 Herdr
 설정, 전용 터미널 글꼴 크기, OMO 사용자 테마만 바꿉니다. 복제 경로는 자유이며,
 PC 구성이나 네트워크 토폴로지를 가정하지 않습니다.
 
-v3.0.23은 companion client를 공식 Herdr **0.9.5**로 옮겨 Windows OMO의
+v3.0.24는 머신·프로젝트·세션을 **Blocked → Working → 미확인 Done → Idle** 순서로
+자동 정렬합니다. 머신 오른쪽의 `▲1 ▶2 ✔1` 배지는 접힌 상태에서도 승인/답변 필요,
+실행 중, 새 답변 완료 개수를 보여 줍니다. 연결이 끊긴 머신의 과거 작업 상태는
+현재 실행 개수에 포함하지 않습니다. 같은 상태의 기존 순서와 worktree 묶음,
+선택 영역 전체 배경은 유지합니다. 기본 `active · grouped`는 프로젝트 묶음을 유지하며,
+정렬 표시를 누르면 세션 전체를 상태순으로 나열하는 `active · priority`로 전환합니다.
+명시적으로 설정한 Agent View의 필터와 정렬은 유지합니다.
+자세한 설계와 참고 사례는 [활동 우선 정렬](docs/sidebar-activity-priority.md)에 있습니다.
+
+v3.0.23에서 companion client를 공식 Herdr **0.9.5**로 옮겨 Windows OMO의
 Kitty keyboard protocol 입력에서 여러 줄 붙여넣기가 줄마다 전송되던 문제를 해결합니다.
 Unix의 이미지 전달은 명시적으로 설정한 키 또는 빈 bracketed paste에만 반응합니다.
 설치 폴더는 `client-release.json`의 `baseVersion`을 사용하며, 기존 서버와 에이전트

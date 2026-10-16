@@ -18,6 +18,7 @@ for (const name of ["blue", "pink", "red"]) {
     const foreground = theme.sidebarText || theme.colors.text;
     assert.equal(new Set(Object.values(data.states).map(p => p.icon)).size, 5);
     assert.equal(data.version, 2);
+    assert.equal(data.activity_priority, true, "the local plugin enables activity ordering for every theme");
     assert.equal(data.states.done.foreground, theme.colors.green);
     assert.equal(data.states.idle.foreground, theme.colors.green);
     assert.notEqual(data.states.done.row_background, data.states.idle.row_background);

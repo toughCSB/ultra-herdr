@@ -6,6 +6,7 @@ export function sidebarTheme(name) {
   const theme = getTheme(name);
   return {
     version: 2,
+    activity_priority: true,
     sidebar_background: theme.colors.sidebar_bg,
     states: Object.fromEntries(Object.entries(theme.sidebarStates).map(([status, paint]) => [status, {
       ...paint,

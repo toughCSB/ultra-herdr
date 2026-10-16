@@ -1,7 +1,7 @@
 # Herdr companion client
 
-v3.0.23은 공식 Herdr **v0.9.5**(`2ecf19a9`) 기반입니다.
-전체 패치 `herdr-0.9.5-ultra-3.0.23.patch`를 공식 v0.9.5에 한 번만 적용합니다.
+v3.0.24는 공식 Herdr **v0.9.5**(`2ecf19a9`) 기반입니다.
+전체 패치 `herdr-0.9.5-ultra-3.0.24.patch`를 공식 v0.9.5에 한 번만 적용합니다.
 이전 0.9.1 전체 패치와 중복 적용하지 않습니다.
 Zig **0.16.0**으로 vendored libghostty-vt를 새로 빌드해야 하며,
 0.9.1에서 만든 prebuilt 라이브러리는 사용하지 않습니다.
@@ -13,10 +13,18 @@ Windows의 Kitty keyboard protocol 입력에서 여러 줄 붙여넣기가 줄�
 Windows 배포에는 공식 0.9.5의 `conpty/` 파일과 라이선스를 함께 보관합니다.
 클라이언트 교체 과정에서 실행 중인 서버와 에이전트 세션은 종료하지 않습니다.
 
+v3.0.24의 활동 우선 정렬은 client presentation에만 적용합니다. 서버 snapshot이나
+workspace 번호, endpoint ID, 상태 감지, wire/API는 변경하지 않습니다. ultra-herdr가
+관리하는 로컬 `sidebar-status.json`의 `activity_priority`로 켜고 끄며, 기존 파일에서
+필드가 빠져 있으면 이전 표시 동작을 유지합니다. 머신·프로젝트·세션 정렬, 머신의
+상태별 개수, 접힌 worktree, Done 확인, 오프라인 캐시 및 탐색 순서를 검증합니다.
+이번 버전은 Mac과 Windows를 모두 다시 빌드해야 합니다.
+
 전달받은 전체 패치에서 Unix helper의 무조건적인 `Ctrl+V`/`Alt+V` fallback만
 제거하여 upstream의 명시적 `remote_image_paste_key` 계약을 복원했습니다.
 bridge-active guard와 빈 bracketed paste 동작, 기존 회귀 테스트는 유지합니다.
-Windows helper와 전달받은 Windows zip은 변경하지 않았습니다.
+Windows 붙여넣기 helper는 변경하지 않았습니다. 3.0.23은 전달받은 Windows zip을
+그대로 사용했으며, 3.0.24는 공통 사이드바 변경을 포함해 다시 빌드합니다.
 수정된 전체 패치는 깨끗한 공식 v0.9.5에 한 번 적용하여 소스 일치까지 검증했습니다.
 
 아래는 이전 버전 참고입니다.
