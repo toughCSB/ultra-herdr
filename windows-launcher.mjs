@@ -16,6 +16,14 @@ export function interactiveProfile(source, script) {
 export function windowsLaunchScript(pointer) {
   return `$ErrorActionPreference = 'Stop'
 $launchArgs = @($args)
+$serverIndex = [Array]::IndexOf($launchArgs, 'server')
+if ($serverIndex -ge 0 -and $launchArgs.Count -gt ($serverIndex + 1) -and $launchArgs[$serverIndex + 1] -eq 'stop') {
+  if ($launchArgs -notcontains '--confirm-server-stop') {
+    Write-Error 'Server stop ends ALL running sessions. Close and reopen the Herdr client window instead. To intentionally stop the server, repeat with --confirm-server-stop.'
+    exit 2
+  }
+  $launchArgs = @($launchArgs | Where-Object { $_ -ne '--confirm-server-stop' })
+}
 if ($launchArgs.Count -eq 0 -or ($launchArgs.Count -eq 2 -and $launchArgs[0] -eq '--session')) {
   $client = (Get-Content -LiteralPath ${quote(pointer)} -Raw -Encoding UTF8 | ConvertFrom-Json).binary
   if (-not $client -or -not (Test-Path -LiteralPath $client -PathType Leaf)) { throw 'Ultra Herdr companion is missing; reinstall local.ultra-herdr' }

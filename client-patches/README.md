@@ -1,5 +1,17 @@
 # Herdr companion client
 
+v3.0.27은 공식 Herdr **v0.9.5** 기반 보관함 재연결·중복 복구 릴리스입니다.
+프로젝트의 workspace ID + 정규화된 저장 경로를 지속 식별자로 사용합니다.
+서버 boot는 전송 대상 확인에만 쓰며, 같은 프로젝트의 새 boot에 로컬 기록과 tombstone을 이관합니다.
+이전 경로 없는 기록은 프로젝트 이름과 보존된 pane ID를 확인하고 기존 중복을 합칩니다.
+`herdr-0.9.5-ultra-3.0.27.patch`를 공식 v0.9.5에 한 번 적용합니다.
+누적 패치이므로 이전 ultra 패치를 중복 적용하지 않습니다.
+기존 공개 JSON API의 workspace metadata를 사용하며 서버·frozen wire 계약은 변경하지 않습니다.
+화면 비활성 머신에도 별도 API worker로 반영합니다. 보관/복원과 메모는 독립 sequence source를
+사용하며, 로컬 durable cache/outbox와 복원 tombstone으로 재접속·충돌을 처리합니다.
+한글 메모는 80자 token 제한 안에서 4개 chunk로 전송합니다. 값은 서버 boot에 바인딩합니다.
+Mac/Windows 모두 새 companion이 필요하며 서버와 에이전트는 종료하지 않습니다.
+
 v3.0.26은 공식 Herdr **v0.9.5** 기반 보관함 동기화 릴리스입니다.
 `herdr-0.9.5-ultra-3.0.26.patch`를 공식 v0.9.5에 한 번 적용합니다.
 누적 패치이므로 이전 ultra 패치를 중복 적용하지 않습니다.
