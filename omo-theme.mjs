@@ -49,6 +49,24 @@ export function omoTheme(name, themeName = "herdr-contrast") {
       pageBg: "#0b0b0e", cardBg: theme.vars.toolPendingBg, infoBg: theme.vars.customMsgBg,
     });
   }
+  if (name === "brown") {
+    Object.assign(theme.vars, {
+      cyan: "#d9b38c", blue: "#d9b38c", accent: "#d9b38c", text: "#fff1e3",
+      gray: "#d9b38c", dimGray: "#d9b38c", darkGray: "#9a6b4a",
+      selectedBg: "#5b3a2a",
+      toolPendingBg: "#5b3a2a", toolSuccessBg: "#5b3a2a",
+      toolErrorBg: "#4b261e", customMsgBg: "#5b3a2a",
+    });
+    Object.assign(theme.colors, {
+      customMessageLabel: "#d9b38c", toolOutput: "#fff1e3",
+      mdHeading: "#fff1e3", mdLink: "#d9b38c",
+      syntaxKeyword: "#d9b38c", syntaxVariable: "#fff1e3", syntaxType: "#d9b38c",
+      thinkingLow: "#d9b38c", thinkingMedium: "#fff1e3",
+    });
+    Object.assign(theme.export, {
+      pageBg: "#2e1c12", cardBg: theme.vars.toolPendingBg, infoBg: theme.vars.customMsgBg,
+    });
+  }
   theme.vars.userMsgBg = userMessage.background;
   theme.colors.userMessageText = userMessage.foreground;
   return theme;

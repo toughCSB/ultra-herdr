@@ -74,11 +74,11 @@ export function terminalFontConfig(source, size, name) {
   }
   profile.font = { ...profile.font, size };
   if (name !== undefined) {
-    const { colors } = getTheme(name);
+    const { colors, terminalForeground } = getTheme(name);
     Object.assign(profile, {
       background: colors.panel_bg,
-      foreground: name === "pink" ? colors.text : "#d4d4d4",
-      cursorColor: name === "pink" ? colors.text : "#d4d4d4",
+      foreground: terminalForeground || (name === "pink" ? colors.text : "#d4d4d4"),
+      cursorColor: terminalForeground || (name === "pink" ? colors.text : "#d4d4d4"),
       selectionBackground: colors.selection_bg,
     });
   }
@@ -185,8 +185,8 @@ export function setFontSize(size) {
   let updated = fontConfig(config, size);
   for (const [key, value] of Object.entries({
     background: theme.colors.panel_bg,
-    foreground: themeName === "pink" ? theme.colors.text : "#d4d4d4",
-    "cursor-color": themeName === "pink" ? theme.colors.text : "#d4d4d4",
+    foreground: theme.terminalForeground || (themeName === "pink" ? theme.colors.text : "#d4d4d4"),
+    "cursor-color": theme.terminalForeground || (themeName === "pink" ? theme.colors.text : "#d4d4d4"),
     "selection-background": theme.colors.selection_bg,
   })) {
     updated = new RegExp(`^\\s*${key}\\s*=`, "m").test(updated)

@@ -88,6 +88,7 @@ test("all presets synchronize the OMO main-pane palette", () => {
   assert.equal(shouldSyncOmoTheme("pink"), true);
   assert.equal(shouldSyncOmoTheme("blue"), true);
   assert.equal(shouldSyncOmoTheme("red"), true);
+  assert.equal(shouldSyncOmoTheme("brown"), true);
 });
 
 test("Pink installs a complete light palette independent of the previous theme", () => {

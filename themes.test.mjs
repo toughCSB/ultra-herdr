@@ -78,7 +78,7 @@ test("Pink terminal palette has readable colors against its light surface", () =
 
 test("unknown theme names fail rather than selecting an implicit fallback", () => {
   for (const name of ["", "Blue", "other", null, 0]) {
-    assert.throws(() => getTheme(name), /blue, pink, or red/);
+    assert.throws(() => getTheme(name), /blue, pink, red, or brown/);
   }
 });
 

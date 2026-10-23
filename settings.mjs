@@ -17,7 +17,7 @@ try {
     await applyCurrentTheme(preset);
     console.log(`  Applied locally: ${preset}. Font unchanged.`);
   } else {
-    const themeInput = (await input.question(`  Theme blue/pink/red [${getThemeName()}]: `)).trim();
+    const themeInput = (await input.question(`  Theme blue/pink/red/brown [${getThemeName()}]: `)).trim();
     if (themeInput !== "q") {
       const sizeInput = (await input.question(`  Font size [${getFontSize()}]: `)).trim();
       if (sizeInput !== "q") {

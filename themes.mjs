@@ -117,9 +117,45 @@ const red = {
   separator: "#ff595e",
 };
 
+// Caramel Latte: retain Blue's roles/layout and semantic status colors.
+const brown = {
+  ...blue,
+  sidebarStates: {
+    ...darkStates,
+    blocked: { ...darkStates.blocked, row_background: "#1e1009" },
+  },
+  colors: {
+    ...blue.colors,
+    panel_bg: "#2e1c12",
+    sidebar_bg: "#5b3a2a",
+    surface0: "#2e1c12",
+    surface1: "#5b3a2a",
+    surface_dim: "#fff1e3",
+    overlay0: "#d9b38c",
+    overlay1: "#fff1e3",
+    subtext0: "#fff1e3",
+    accent: "#d9b38c",
+    active_row_bg: "#9a6b4a",
+    selection_bg: "#9a6b4a",
+    text: "#fff1e3",
+  },
+  userMessage: { background: "#d9b38c", foreground: "#2e1c12" },
+  codeBlock: { background: "#5b3a2a", foreground: "#fff1e3" },
+  terminalForeground: "#fff1e3",
+  sidebarText: "#fff1e3",
+  terminalPalette: [
+    "#fff1e3", "#ff9595", "#91d99b", "#f0d070", "#d9b38c",
+    "#c6a7f6", "#fff1e3", "#d9b38c", "#d9b38c",
+  ],
+  badge: "#d9b38c",
+  title: "#fff1e3",
+  separator: "#9a6b4a",
+};
+
 export function getTheme(name = "blue") {
   if (name === "blue") return blue;
   if (name === "pink") return pink;
   if (name === "red") return red;
-  throw new Error("Theme must be blue, pink, or red");
+  if (name === "brown") return brown;
+  throw new Error("Theme must be blue, pink, red, or brown");
 }

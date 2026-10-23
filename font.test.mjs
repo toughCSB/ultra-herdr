@@ -88,7 +88,7 @@ test("theme update preserves font size, machine label, and unrelated settings", 
   assert.deepEqual(themeSettings(settings, "red"), { ...settings, theme: "red" });
   assert.deepEqual(fontSettings(settings, 18), { ...settings, fontSize: 18 });
   assert.equal(settings.theme, "blue");
-  assert.throws(() => themeSettings(settings, "purple"), /blue, pink, or red/);
+  assert.throws(() => themeSettings(settings, "purple"), /blue, pink, red, or brown/);
 });
 
 test("theme storage defaults to blue and validates before changing settings", async () => {
@@ -110,10 +110,10 @@ test("theme storage defaults to blue and validates before changing settings", as
       fontSize: 17, localMachineLabel: "SV", extra: "keep", theme: "red",
     });
     const stored = readFileSync(path, "utf8");
-    assert.throws(() => setThemeName("purple"), /blue, pink, or red/);
+    assert.throws(() => setThemeName("purple"), /blue, pink, red, or brown/);
     assert.equal(readFileSync(path, "utf8"), stored);
     writeFileSync(path, JSON.stringify({ theme: "purple" }));
-    assert.throws(() => getThemeName(), /blue, pink, or red/);
+    assert.throws(() => getThemeName(), /blue, pink, red, or brown/);
   } finally {
     if (previous === undefined) delete process.env.HERDR_PLUGIN_CONFIG_DIR;
     else process.env.HERDR_PLUGIN_CONFIG_DIR = previous;

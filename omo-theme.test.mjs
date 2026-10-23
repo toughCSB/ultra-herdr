@@ -7,7 +7,7 @@ import { omoTheme, syncOmoTheme } from "./omo-theme.mjs";
 import { getTheme } from "./themes.mjs";
 
 test("every workspace card palette matches the OMO user-message surface", () => {
-  for (const name of ["blue", "pink", "red"]) {
+  for (const name of ["blue", "pink", "red", "brown"]) {
     const palette = getTheme(name).userMessage;
     const theme = omoTheme(name);
     assert.equal(theme.vars.userMsgBg, palette.background);

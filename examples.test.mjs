@@ -6,7 +6,7 @@ import { validateFontSize, localMachineLabel } from "./font.mjs";
 
 test("published configuration seed expands all themes with managed sidebar rows", () => {
   const seed = readFileSync(new URL("./examples/herdr-config.example.toml", import.meta.url), "utf8");
-  for (const theme of ["blue", "pink", "red"]) {
+  for (const theme of ["blue", "pink", "red", "brown"]) {
     const config = applyTheme(seed, theme);
     assert.match(config, /\$skyline_group_machine/);
     assert.match(config, /\$ultra_provider_26/);

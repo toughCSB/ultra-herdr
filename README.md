@@ -1,10 +1,17 @@
 # ultra-herdr
 
-**Herdr plugin v3.0.27 — PC별 Blue / Pink / RED 작업공간 테마와 목록 개선 플러그인**
+**Herdr plugin v3.0.28 — PC별 Blue / Pink / RED / Dark Brown 작업공간 테마와 목록 개선 플러그인**
 
 `ultra-herdr`는 Herdr 0.9.5 기반 companion client를 사용하는 테마·프로젝트 관리 플러그인입니다.
 테마, 글꼴 크기, OMO 테마는 설치한 PC에만 적용하고, 프로젝트 보관 상태와 메모는
 같은 Herdr 머신에 연결된 클라이언트끼리 공유합니다. PC별 SSH 자격 증명은 기존 설정을 사용합니다.
+
+v3.0.28은 **Dark Brown 테마**를 추가합니다. Blue의 구성과 색상 역할을 유지하면서
+Caramel Latte의 다섯 색상을 사이드바·선택 영역·본문·내 대화창·코드 블록에 매칭합니다.
+기존 세 테마, 상태 아이콘과 의미 색상, 글꼴, 키 설정, 보관함 동작은 유지합니다.
+네이티브 코드는 변경하지 않아 `client-release.json`이 지정하는 검증된 **companion 3.0.27**을
+그대로 사용합니다. 플러그인 버전과 companion 버전은 독립적이며, 테마 적용을 위해
+서버나 대화 세션을 재시작할 필요는 없습니다.
 
 v3.0.27은 **서버 재시작 뒤 보관함 중복과 복원 실패**를 수정합니다. 같은 프로젝트의
 저장 경로와 식별자를 확인하여 보관 상태를 이어 붙이고, 이미 생긴 중복 기록도 합칩니다.
@@ -262,7 +269,11 @@ Herdr 프로필을 사용한다는 뜻이 아닙니다.
 
 `localMachineLabel`을 생략하면 호스트명이 기본값입니다. `"MyPC"`처럼 임의의
 레이블도 지원하며, 네트워크 이름이나 SSH alias일 필요가 없습니다.
-`fontSize`는 `8–36`, `theme`는 `blue`, `pink`, `red`입니다.
+`fontSize`는 `8–36`, `theme`는 `blue`, `pink`, `red`, `brown`입니다.
+Dark Brown(`brown`)은 Blue와 같은 구성에 Caramel Latte 팔레트를 매칭합니다.
+배경 `#2E1C12`, 사이드바·코드 블록 `#5B3A2A`, 선택 영역 `#9A6B4A`,
+강조·내 대화창 `#D9B38C`, 본문 `#FFF1E3`를 사용합니다.
+설정에서 `brown`을 입력하거나 **ultra-herdr: Dark Brown**을 선택합니다.
 
 ### 4. Herdr 설정의 새 설치 시드
 
