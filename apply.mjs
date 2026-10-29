@@ -1,15 +1,15 @@
 import { execFileSync } from "node:child_process";
-import { readFileSync, renameSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { posix, win32 } from "node:path";
 import { fileURLToPath } from "node:url";
-import { getFontSize, setFontSize, getThemeName, setThemeName, validateFontSize } from "./font.mjs";
+import { getFontSize, getThemeName, validateFontSize, prepareTerminal, pluginSettingsPath, themeSettings, fontSettings } from "./font.mjs";
 import { start, syncLabels } from "./labels.mjs";
 import { providerTokenCell, workspaceProviderKeys } from "./providers.mjs";
 import { getTheme } from "./themes.mjs";
-import { syncOmoTheme } from "./omo-theme.mjs";
-import { syncMarkdownViewers } from "./markdown.mjs";
-import { syncSidebarTheme } from "./sidebar-theme.mjs";
+import { prepareOmoTheme } from "./omo-theme.mjs";
+import { prepareMarkdownViewers, markdownPaths } from "./markdown.mjs";
+import { prepareSidebarTheme } from "./sidebar-theme.mjs";
+import { activationError, commitFiles, fileChange } from "./files.mjs";
 
 function sidebar(theme) {
   const sidebarText = theme.sidebarText;
@@ -100,47 +100,62 @@ export function reloadLocalConfig(run = (args) => execFileSync(
   run(["server", "reload-config"]);
 }
 
-export function shouldSyncOmoTheme(name) {
-  getTheme(name);
-  return true;
-}
-
-export function applyPalette(name = getThemeName(), size = getFontSize()) {
-  validateFontSize(size);
-  const configPath = herdrConfigPath();
-  const original = readFileSync(configPath, "utf8");
-  const updated = applyTheme(original, name);
-  if (updated !== original) {
-    if (readFileSync(configPath, "utf8") !== original) throw new Error("Herdr config changed while applying theme");
-    const temporary = `${configPath}.ultra-herdr-${process.pid}`;
-    writeFileSync(temporary, updated);
-    renameSync(temporary, configPath);
-    try {
-      execFileSync(process.env.HERDR_BIN_PATH || "herdr", ["config", "check"], { windowsHide: true });
-    } catch (error) {
-      writeFileSync(temporary, original);
-      renameSync(temporary, configPath);
-      throw error;
-    }
-  }
-  setThemeName(name);
-  setFontSize(size);
-  if (shouldSyncOmoTheme(name)) {
-    const content = syncOmoTheme(name);
-    if (content.changedSelection) console.log("OMO theme selected; existing built-in-theme sessions update on their next safe config reload.");
-  }
-  syncMarkdownViewers(name);
-  syncSidebarTheme(name, configPath);
-  reloadLocalConfig();
-}
-
-export async function applyCurrentTheme(name = getThemeName(), size = getFontSize()) {
+export function applyPalette(name = getThemeName(), size = getFontSize(), options = {}) {
   getTheme(name);
   validateFontSize(size);
-  applyPalette(name, size);
-  const labels = await syncLabels();
-  await start();
-  if (labels.failures.length) throw new Error(`Metadata sync failed: ${labels.failures.join(", ")}`);
+  const { platform = process.platform, environment = process.env, home = homedir(), run = execFileSync } = options;
+  const configPath = options.configPath || herdrConfigPath(platform, environment, home);
+  const settingsPath = options.settingsPath || pluginSettingsPath(platform, environment, home);
+  const config = fileChange(configPath, source => {
+    if (source === null) throw new Error(`Herdr config not found: ${configPath}`);
+    return applyTheme(source.toString("utf8"), name);
+  });
+  const terminal = prepareTerminal(name, size, { ...options, platform, environment, home, run });
+  const settings = fileChange(settingsPath, source => `${JSON.stringify(themeSettings(fontSettings(JSON.parse(source?.toString("utf8") || "{}"), size), name), null, 2)}\n`);
+  const omo = prepareOmoTheme(name, options.agentDir || posix.join(home, ".omo", "agent"));
+  const markdown = prepareMarkdownViewers(name, { paths: options.markdownPaths || markdownPaths(platform, environment, home) });
+  commitFiles([config, terminal.change, settings, ...omo.changes, ...markdown, prepareSidebarTheme(name, configPath)], {
+    io: options.io,
+    validate(staged) {
+      terminal.validate(staged);
+      run(environment.HERDR_BIN_PATH || "herdr", ["config", "check"], {
+        windowsHide: true, timeout: 20000,
+        env: { ...environment, HERDR_CONFIG_PATH: staged.get(config.path) },
+      });
+    },
+  });
+  if (omo.result.changedSelection) console.log("OMO theme selected; existing built-in-theme sessions update on their next safe config reload.");
+  const failed = [];
+  const causes = [];
+  for (const [stage, activate] of [
+    ["terminal", () => terminal.activate()],
+    ["reload-config", () => reloadLocalConfig(args => run(environment.HERDR_BIN_PATH || "herdr", args, { windowsHide: true, encoding: "utf8", timeout: 20000 }))],
+  ]) {
+    try { activate(); } catch (cause) { failed.push(stage); causes.push(cause); }
+  }
+  if (failed.length) throw activationError(failed, new AggregateError(causes));
+  return { persisted: true };
+}
+
+export async function applyCurrentTheme(name = getThemeName(), size = getFontSize(), options = {}) {
+  const failed = [];
+  const causes = [];
+  try { applyPalette(name, size, options); }
+  catch (error) {
+    if (!error.persisted) throw error;
+    failed.push(...error.failed); causes.push(error);
+  }
+  for (const [stage, activate] of [
+    ["metadata", async () => {
+      const labels = await (options.syncLabels || syncLabels)();
+      if (labels.failures.length) throw new Error(`Metadata sync failed: ${labels.failures.join(", ")}`);
+    }],
+    ["activity", () => (options.start || start)()],
+  ]) {
+    try { await activate(); } catch (cause) { failed.push(stage); causes.push(cause); }
+  }
+  if (failed.length) throw activationError(failed, new AggregateError(causes));
+  return { persisted: true };
 }
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) {

@@ -390,7 +390,13 @@ reporter는 실제 turn, blocked, children, monitor, settled, quit 이벤트를 
 
 ## 검증
 
-Node 24와 npm만 있으면 됩니다.
+구조 개선의 책임과 실패 복구 규칙은 [설계·검증 안내](docs/architecture-renewal.md)에,
+Viewing PC·Execution PC와 활성화의 의미는 [용어](GLOSSARY.md)에 정리했습니다.
+native 릴리스는 `node release-check.mjs --help`로 고정 source·누적 patch·빌드·asset
+검증을 재현할 수 있습니다. 다른 OS 검사나 명시적으로 생략한 검사는 통과와 구분합니다.
+
+플러그인 검사는 Node 24, npm과 Git으로 실행합니다. native 검증에는 Rust/Cargo와
+Zig 0.16.0이 별도로 필요하며, 실제 사용한 toolchain 버전을 결과에 기록합니다.
 
 ```sh
 npm test

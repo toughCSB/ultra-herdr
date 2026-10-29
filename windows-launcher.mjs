@@ -1,6 +1,9 @@
 import { execFileSync } from "node:child_process";
-import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { existsSync, readFileSync } from "node:fs";
+import { join } from "node:path";
+import { randomUUID } from "node:crypto";
+import { terminalJson, terminalSettingsPath } from "./font.mjs";
+import { activationError, commitFiles, fileChange } from "./files.mjs";
 
 const begin = "# >>> ultra-herdr interactive client";
 const end = "# <<< ultra-herdr interactive client";
@@ -38,38 +41,54 @@ if ($null -ne $LASTEXITCODE) { exit $LASTEXITCODE }
 `;
 }
 
-function atomicWrite(path, contents) {
-  mkdirSync(dirname(path), { recursive: true });
-  const temporary = `${path}.ultra-herdr-${process.pid}`;
-  writeFileSync(temporary, contents);
-  renameSync(temporary, path);
-}
-
-export function activateWindowsClient(base, binary) {
+export function prepareWindowsClient(base, binary, {
+  terminalPath = terminalSettingsPath(), run = execFileSync,
+} = {}) {
   if (!existsSync(binary)) throw new Error("Companion executable is missing");
+  // Missing/corrupt profiles fail before pointer, hooks, or shortcuts are changed.
+  const terminal = fileChange(terminalPath, source => {
+    if (source === null) throw new Error(`Windows Terminal config not found: ${terminalPath}`);
+    const settings = terminalJson(source.toString("utf8"));
+    const profile = Array.isArray(settings.profiles?.list) && settings.profiles.list.find(item => item.name === "Herdr");
+    if (!profile) throw new Error("Windows Terminal has no Herdr profile");
+    profile.commandline = `"${binary}" --session default`;
+    return `${JSON.stringify(settings, null, 2)}\n`;
+  });
   const script = join(base, "launch-herdr.ps1");
-  atomicWrite(script, windowsLaunchScript(join(base, "current-client.json")));
-  atomicWrite(join(base, "current-client.json"), `${JSON.stringify({ binary })}\n`);
+  const pointer = join(base, "current-client.json");
+  const changes = [fileChange(script, windowsLaunchScript(pointer))];
   const profiles = new Set();
   for (const shell of ["powershell.exe", "pwsh.exe"]) {
     try {
-      const output = execFileSync(shell, ["-NoProfile", "-Command", "$PROFILE.CurrentUserAllHosts"], { encoding: "utf8", windowsHide: true });
+      const output = run(shell, ["-NoProfile", "-Command", "$PROFILE.CurrentUserAllHosts"], { encoding: "utf8", windowsHide: true, timeout: 20000 });
+      if (!output.trim()) throw new Error("PowerShell returned no profile path");
       profiles.add(output.trim());
-    } catch (error) {
-      if (error.code !== "ENOENT") throw error;
-    }
+    } catch (error) { if (error.code !== "ENOENT") throw error; }
   }
   for (const path of profiles) {
-    if (!path) throw new Error("PowerShell returned no profile path");
-    const original = existsSync(path) ? readFileSync(path, "utf8") : "";
-    const updated = interactiveProfile(original, script);
-    if (updated === original) continue;
-    if (existsSync(path)) {
-      if (readFileSync(path, "utf8") !== original) throw new Error("PowerShell profile changed while installing client");
-      const backup = `${path}.ultra-herdr-backup-${Date.now()}`;
-      writeFileSync(backup, original, { flag: "wx" });
-    }
-    atomicWrite(path, updated);
+    const change = fileChange(path, source => interactiveProfile(source?.toString("utf8") || "", script));
+    if (change.original?.equals(change.updated)) continue;
+    if (change.original !== null) changes.push(fileChange(`${path}.ultra-herdr-backup-${randomUUID()}`, change.original));
+    changes.push(change);
   }
-  return script;
+  changes.push(terminal, fileChange(pointer, `${JSON.stringify({ binary })}\n`));
+  return { changes, script, pointer };
+}
+
+export function activateWindowsClient(base, binary, options = {}) {
+  const { run = execFileSync } = options;
+  const plan = prepareWindowsClient(base, binary, options);
+  commitFiles(plan.changes, { io: options.io });
+  if (JSON.parse(readFileSync(plan.pointer, "utf8")).binary !== binary) throw activationError(["client-pointer"], undefined, "Client");
+  // Shortcuts are an external COM effect; report failure after committed activation.
+  const shortcut = [
+    "$ErrorActionPreference = 'Stop'",
+    "$w = New-Object -ComObject WScript.Shell",
+    "$p = Join-Path ([Environment]::GetFolderPath('Desktop')) 'Herdr.lnk'",
+    `if (Test-Path -LiteralPath $p) { $s = $w.CreateShortcut($p); $expected = ${quote('-w new nt -p Herdr --title Herdr -- "'+binary+'" --session default')}; $s.Arguments = $expected; $s.Save(); if ($w.CreateShortcut($p).Arguments -ne $expected) { throw 'Herdr shortcut verification failed' } }`,
+  ].join("; ");
+  try {
+    run("powershell.exe", ["-NoProfile", "-EncodedCommand", Buffer.from(shortcut, "utf16le").toString("base64")], { windowsHide: true, timeout: 20000 });
+  } catch (cause) { throw activationError(["shortcut"], cause, "Client"); }
+  return plan.script;
 }

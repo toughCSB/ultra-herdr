@@ -10,6 +10,6 @@
   },
   "scripts": {
     "test": "node --test --test-reporter=tap *.test.mjs",
-    "check": "node --check client.mjs && node --check activity.mjs && node --check apply.mjs && node --check font.mjs && node --check labels.mjs && node --check omo-theme.mjs && node --check providers.mjs && node --check settings.mjs && node --check themes.mjs && node --check integrations/omo/herdr-senpi.js && node --check integrations/omo/herdr-senpi.mjs && node --check markdown.mjs && node --check windows-launcher.mjs && node --check sidebar-theme.mjs"
+    "check": "node --check release-check.mjs && node --check files.mjs && node --check client.mjs && node --check activity.mjs && node --check apply.mjs && node --check font.mjs && node --check labels.mjs && node --check omo-theme.mjs && node --check providers.mjs && node --check settings.mjs && node --check themes.mjs && node --check integrations/omo/herdr-senpi.js && node --check integrations/omo/herdr-senpi.mjs && node --check markdown.mjs && node --check windows-launcher.mjs && node --check sidebar-theme.mjs"
   }
 }

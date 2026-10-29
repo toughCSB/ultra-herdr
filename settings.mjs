@@ -1,7 +1,7 @@
 import { createInterface } from "node:readline/promises";
 import { hostname } from "node:os";
 import { getFontSize, getThemeName, getLocalMachineLabel, validateFontSize } from "./font.mjs";
-import { getTheme } from "./themes.mjs";
+import { getTheme, themeNames } from "./themes.mjs";
 import { applyCurrentTheme } from "./apply.mjs";
 
 const input = createInterface({ input: process.stdin, output: process.stdout });
@@ -17,7 +17,7 @@ try {
     await applyCurrentTheme(preset);
     console.log(`  Applied locally: ${preset}. Font unchanged.`);
   } else {
-    const themeInput = (await input.question(`  Theme blue/pink/red/brown [${getThemeName()}]: `)).trim();
+    const themeInput = (await input.question(`  Theme ${themeNames.join("/")} [${getThemeName()}]: `)).trim();
     if (themeInput !== "q") {
       const sizeInput = (await input.question(`  Font size [${getFontSize()}]: `)).trim();
       if (sizeInput !== "q") {

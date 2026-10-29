@@ -4,7 +4,7 @@ import { dirname, join } from "node:path";
 import { tmpdir } from "node:os";
 import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { test } from "node:test";
-import { applyTheme, herdrConfigPath, reloadLocalConfig, shouldSyncOmoTheme } from "./apply.mjs";
+import { applyTheme, herdrConfigPath, reloadLocalConfig } from "./apply.mjs";
 import { getTheme } from "./themes.mjs";
 import { terminalSettingsPath } from "./font.mjs";
 
@@ -82,13 +82,6 @@ test("Windows uses APPDATA for Herdr config and Mac retains XDG", () => {
   assert.equal(herdrConfigPath("darwin", { XDG_CONFIG_HOME: "/config" }), "/config/herdr/config.toml");
   assert.throws(() => herdrConfigPath("win32", {}), /APPDATA/);
   assert.equal(herdrConfigPath("win32", { HERDR_CONFIG_PATH: "C:\\custom\\herdr.toml" }), "C:\\custom\\herdr.toml");
-});
-
-test("all presets synchronize the OMO main-pane palette", () => {
-  assert.equal(shouldSyncOmoTheme("pink"), true);
-  assert.equal(shouldSyncOmoTheme("blue"), true);
-  assert.equal(shouldSyncOmoTheme("red"), true);
-  assert.equal(shouldSyncOmoTheme("brown"), true);
 });
 
 test("Pink installs a complete light palette independent of the previous theme", () => {

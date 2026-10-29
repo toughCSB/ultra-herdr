@@ -10,5 +10,23 @@
       "file": "herdr-client-win32-x64.zip",
       "sha256": "21069dcd2694b5172e86723cdfd13ec5b07d3ec6037d99e6ed772510a0ebe5ad"
     }
-  }
+  },
+  "source": {
+    "repository": "https://github.com/herdrdev/herdr.git",
+    "tag": "v0.9.5",
+    "commit": "2ecf19a92fc3a7fff75b6ce3655ef04f4625ec01"
+  },
+  "patch": {
+    "file": "client-patches/herdr-0.9.5-ultra-3.0.27.patch",
+    "sha256": "00140d012baedd9a39db604063a4f7dc2c21d02558316a9bc3221a83b8ae9260"
+  },
+  "toolchain": {
+    "zig": "0.16.0"
+  },
+  "tests": [
+    "archive_",
+    "activity_priority_",
+    "client::shell::tests::sidebar_status::",
+    "clipboard"
+  ]
 }

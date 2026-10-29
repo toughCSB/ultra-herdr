@@ -1,11 +1,11 @@
 import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
-import { existsSync, mkdirSync, readFileSync, writeFileSync, chmodSync, renameSync, lstatSync, symlinkSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync, chmodSync, renameSync, realpathSync } from "node:fs";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { terminalJson, terminalSettingsPath } from "./font.mjs";
 import { activateWindowsClient } from "./windows-launcher.mjs";
+import { activationError, commitFiles, fileChange, linkChange } from "./files.mjs";
 
 const release = JSON.parse(readFileSync(new URL("./client-release.json", import.meta.url), "utf8"));
 
@@ -21,18 +21,18 @@ export function ghosttyClientConfig(source, binary) {
   return source.replace(/^command\s*=.*$/m, command);
 }
 
-export function activateMacClient(base, directory) {
+export function activateMacClient(base, directory, { launcherPath, io } = {}) {
   const binary = join(directory, "herdr");
   if (!existsSync(binary)) throw new Error("Companion executable is missing");
   const current = join(base, "current");
-  try {
-    if (!lstatSync(current).isSymbolicLink()) throw new Error("Companion current path is not a symlink");
-  } catch (error) {
-    if (error.code !== "ENOENT") throw error;
-  }
-  const temporary = `${current}.activate-${process.pid}`;
-  symlinkSync(directory, temporary, "dir");
-  renameSync(temporary, current);
+  // Prepare every text file before selecting the version. The stable pointer is last.
+  const changes = launcherPath ? [fileChange(launcherPath, source => {
+    if (source === null) throw new Error(`Ghostty launcher not found: ${launcherPath}`);
+    return ghosttyClientConfig(source.toString("utf8"), join(current, "herdr"));
+  })] : [];
+  changes.push(linkChange(current, directory));
+  commitFiles(changes, { io });
+  if (realpathSync(join(current, "herdr")) !== realpathSync(binary)) throw activationError(["client-pointer"], undefined, "Client");
   return join(current, "herdr");
 }
 
@@ -71,24 +71,10 @@ export async function installClient() {
   }
   if (process.platform === "win32") {
     activateWindowsClient(base, binary);
-    const path = terminalSettingsPath();
-    const settings = terminalJson(readFileSync(path, "utf8"));
-    const profile = settings.profiles.list.find(item => item.name === "Herdr");
-    if (!profile) throw new Error("Windows Terminal has no Herdr profile");
-    profile.commandline = `"${binary}" --session default`;
-    writeFileSync(path, `${JSON.stringify(settings, null, 2)}\n`);
-    const script = [
-      "$w = New-Object -ComObject WScript.Shell",
-      "$p = Join-Path ([Environment]::GetFolderPath('Desktop')) 'Herdr.lnk'",
-      `if (Test-Path $p) { $s = $w.CreateShortcut($p); $s.Arguments = '-w new nt -p Herdr --title Herdr -- "${binary.replaceAll("'", "''")}" --session default'; $s.Save() }`,
-    ].join("; ");
-    execFileSync("powershell.exe", ["-NoProfile", "-EncodedCommand", Buffer.from(script, "utf16le").toString("base64")], { windowsHide: true });
   } else {
-    const launcher = join(homedir(), ".local/share/herdr-launcher/herdr.ghostty");
-    // Ghostty can retain its command across new windows. Keep that command stable
-    // while atomically selecting the installed version for future launches.
-    const current = activateMacClient(base, directory);
-    writeFileSync(launcher, ghosttyClientConfig(readFileSync(launcher, "utf8"), current));
+    activateMacClient(base, directory, {
+      launcherPath: join(homedir(), ".local/share/herdr-launcher/herdr.ghostty"),
+    });
   }
   return binary;
 }

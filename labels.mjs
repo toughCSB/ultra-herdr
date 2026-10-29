@@ -109,7 +109,7 @@ export async function syncLabels({
         const sessions = (snapshot.agents || []).filter((agent) => agent.workspace_id === workspace.workspace_id);
         const wanted = {
           skyline_separator: projectSeparator,
-          ultra_terminal_fg: terminalForeground || (themeName === "pink" ? colors.text : "#d4d4d4"),
+          ultra_terminal_fg: terminalForeground,
           ultra_terminal_bg: colors.panel_bg,
           ultra_terminal_palette: terminalPalette?.join(",") || "",
           ultra_user_message_bg: userMessage.background,

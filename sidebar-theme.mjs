@@ -1,6 +1,6 @@
-import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { getTheme } from "./themes.mjs";
+import { commitFiles, fileChange } from "./files.mjs";
 
 export function sidebarTheme(name) {
   const theme = getTheme(name);
@@ -16,15 +16,11 @@ export function sidebarTheme(name) {
   };
 }
 
-export function syncSidebarTheme(name, configPath) {
+export function prepareSidebarTheme(name, configPath) {
   const path = join(dirname(configPath), "plugins", "config", "local.ultra-herdr", "sidebar-status.json");
-  const original = existsSync(path) ? readFileSync(path, "utf8") : null;
-  const updated = `${JSON.stringify(sidebarTheme(name), null, 2)}\n`;
-  if (original === updated) return false;
-  mkdirSync(dirname(path), { recursive: true });
-  if (existsSync(path) && readFileSync(path, "utf8") !== original) throw new Error("Sidebar theme changed while applying settings");
-  const temporary = `${path}.ultra-herdr-${process.pid}`;
-  writeFileSync(temporary, updated);
-  renameSync(temporary, path);
-  return true;
+  return fileChange(path, `${JSON.stringify(sidebarTheme(name), null, 2)}\n`);
+}
+
+export function syncSidebarTheme(name, configPath) {
+  return commitFiles([prepareSidebarTheme(name, configPath)]).changed > 0;
 }

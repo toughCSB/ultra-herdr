@@ -18,7 +18,7 @@ test("installer follows baseVersion across rebases and preserves the old install
     execFileSync("tar", ["-czf", archive, "-C", packageDir, "herdr"]);
     const sha256 = createHash("sha256").update(readFileSync(archive)).digest("hex");
     writeFileSync(join(fixture, "client.mjs"), readFileSync(new URL("./client.mjs", import.meta.url)));
-    for (const name of ["font.mjs", "windows-launcher.mjs"]) {
+    for (const name of ["font.mjs", "windows-launcher.mjs", "files.mjs"]) {
       symlinkSync(fileURLToPath(new URL(name, import.meta.url)), join(fixture, name));
     }
     const launcher = join(dir, ".local/share/herdr-launcher");

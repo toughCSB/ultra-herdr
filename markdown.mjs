@@ -1,7 +1,8 @@
-import { existsSync, readFileSync, renameSync, writeFileSync } from "node:fs";
+import { existsSync } from "node:fs";
 import { homedir } from "node:os";
 import { posix, win32 } from "node:path";
 import { getTheme } from "./themes.mjs";
+import { commitFiles, fileChange } from "./files.mjs";
 
 export function markdownPaths(platform = process.platform, environment = process.env, home = homedir()) {
   if (platform === "win32") {
@@ -20,36 +21,34 @@ export function markdownPaths(platform = process.platform, environment = process
 }
 
 export function sidebarMarkdownTheme(source, name) {
-  getTheme(name);
+  const theme = getTheme(name);
   const state = JSON.parse(source);
   if (!state || typeof state !== "object" || Array.isArray(state)) throw new Error("Invalid sidebar state");
-  const colors = name === "pink" ? "light" : "vscode";
+  const colors = theme.appearance === "light" ? "light" : "vscode";
   if (state.colors === colors) return source;
   return `${JSON.stringify({ ...state, colors }, null, 2)}\n`;
 }
 
 export function glowMarkdownTheme(source, name) {
-  getTheme(name);
-  const line = `style: "${name === "pink" ? "light" : "dark"}"`;
+  const theme = getTheme(name);
+  const line = `style: "${theme.appearance}"`;
   if (/^style\s*:/m.test(source)) return source.replace(/^style\s*:.*$/m, line);
   return `${source}${source.endsWith("\n") || !source ? "" : "\n"}${line}\n`;
 }
 
 // The file-sidebar preview passes an explicit Glow style, so its own state
 // must agree with the execution PC as well as the standalone Glow config.
-export function syncMarkdownViewers(name, options = {}) {
+export function prepareMarkdownViewers(name, options = {}) {
+  getTheme(name);
   const paths = options.paths || markdownPaths();
-  let changed = 0;
+  const changes = [];
   for (const [path, transform] of [[paths.sidebar, sidebarMarkdownTheme], [paths.glow, glowMarkdownTheme]]) {
     if (!existsSync(path)) continue;
-    const original = readFileSync(path, "utf8");
-    const updated = transform(original, name);
-    if (updated === original) continue;
-    if (readFileSync(path, "utf8") !== original) throw new Error("Markdown viewer settings changed while applying theme");
-    const temporary = `${path}.ultra-herdr-${process.pid}`;
-    writeFileSync(temporary, updated);
-    renameSync(temporary, path);
-    changed++;
+    changes.push(fileChange(path, source => transform(source.toString("utf8"), name)));
   }
-  return changed;
+  return changes;
+}
+
+export function syncMarkdownViewers(name, options = {}) {
+  return commitFiles(prepareMarkdownViewers(name, options)).changed;
 }
