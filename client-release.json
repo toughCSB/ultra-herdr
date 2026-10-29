@@ -1,14 +1,14 @@
 {
-  "version": "3.0.27",
+  "version": "3.0.29",
   "baseVersion": "0.9.5",
   "assets": {
     "darwin-arm64": {
       "file": "herdr-client-darwin-arm64.tar.gz",
-      "sha256": "15dee499ab8a6fa16f26fc9cdd10e77131f37a47f537ccb54641497c571989e4"
+      "sha256": "3490ea0fd1a190d1706f45045f8b9cf22e1de5d61f42ace75fad1f288b65e543"
     },
     "win32-x64": {
       "file": "herdr-client-win32-x64.zip",
-      "sha256": "21069dcd2694b5172e86723cdfd13ec5b07d3ec6037d99e6ed772510a0ebe5ad"
+      "sha256": "8834af86b5b8efea68f2b406697fa3c0e9beb6b2982b6d4eaf6d957574bd4cd9"
     }
   },
   "source": {
@@ -17,13 +17,14 @@
     "commit": "2ecf19a92fc3a7fff75b6ce3655ef04f4625ec01"
   },
   "patch": {
-    "file": "client-patches/herdr-0.9.5-ultra-3.0.27.patch",
-    "sha256": "00140d012baedd9a39db604063a4f7dc2c21d02558316a9bc3221a83b8ae9260"
+    "file": "client-patches/herdr-0.9.5-ultra-3.0.29.patch",
+    "sha256": "e8fdfc6cce2f76592bb8dcdc09e6fae1e3c825ec1947bf01db625ddd73195e66"
   },
   "toolchain": {
     "zig": "0.16.0"
   },
   "tests": [
+    "codex_hud_",
     "archive_",
     "activity_priority_",
     "client::shell::tests::sidebar_status::",

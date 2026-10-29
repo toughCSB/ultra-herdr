@@ -2,12 +2,33 @@ import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, writeFileSync, chmodSync, renameSync, realpathSync } from "node:fs";
 import { homedir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { activateWindowsClient } from "./windows-launcher.mjs";
 import { activationError, commitFiles, fileChange, linkChange } from "./files.mjs";
+import { pluginSettingsPath } from "./font.mjs";
 
 const release = JSON.parse(readFileSync(new URL("./client-release.json", import.meta.url), "utf8"));
+
+export function localClientDirectory(base, {
+  config = join(dirname(pluginSettingsPath()), "client-local.json"),
+  platform = process.platform, arch = process.arch,
+  releaseVersion = release.version, baseVersion = release.baseVersion,
+} = {}) {
+  if (!existsSync(config)) return null;
+  const local = JSON.parse(readFileSync(config, "utf8"));
+  if (local.releaseVersion !== releaseVersion || local.baseVersion !== baseVersion
+      || local.platform !== platform || local.arch !== arch) return null;
+  if (typeof local.directory !== "string" || !/^[\w.-]+$/.test(local.directory) || [".", ".."].includes(local.directory)) {
+    throw new Error("Invalid local companion directory");
+  }
+  const directory = join(base, local.directory);
+  const binary = join(directory, platform === "win32" ? "herdr.exe" : "herdr");
+  if (!existsSync(binary) || createHash("sha256").update(readFileSync(binary)).digest("hex") !== local.sha256) {
+    throw new Error("Local companion SHA256 mismatch; preserve current sessions and rebuild the local companion");
+  }
+  return directory;
+}
 
 export function clientAsset(platform, arch) {
   const asset = release.assets[`${platform}-${arch}`];
@@ -41,7 +62,7 @@ export async function installClient() {
   const base = process.platform === "win32"
     ? join(process.env.LOCALAPPDATA, "Programs", "ultra-herdr-client")
     : join(homedir(), ".local/share/ultra-herdr-client");
-  const directory = join(base, `${release.baseVersion}-ultra-${release.version}`);
+  const directory = localClientDirectory(base) || join(base, `${release.baseVersion}-ultra-${release.version}`);
   const binary = join(directory, process.platform === "win32" ? "herdr.exe" : "herdr");
   if (!existsSync(binary)) {
     mkdirSync(base, { recursive: true });

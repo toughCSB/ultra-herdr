@@ -1,4 +1,5 @@
 import { createConnection } from "node:net";
+import { createSessionTracker } from "./session-tracker.mjs";
 
 const source = "local.ultra-herdr.activity";
 const frames = "\u280b\u2819\u2839\u2838\u283c\u2834\u2826\u2827\u2807\u280f";
@@ -57,6 +58,7 @@ export function activityPlan(snapshot, frameIndex = 0) {
 export function startActivity({
   socketPath = process.env.HERDR_SOCKET_PATH,
   onError = console.error,
+  trackSessions = false,
 } = {}) {
   if (typeof socketPath !== "string" || !socketPath.trim()) {
     throw new Error("HERDR_SOCKET_PATH is required for local activity");
@@ -71,6 +73,7 @@ export function startActivity({
   let stopped = false;
   let timer;
   let stopping;
+  const sessions = trackSessions ? createSessionTracker({ request, onError }) : null;
 
   function request(method, params, deadline) {
     const remaining = Math.min(requestTimeout, deadline - Date.now());
@@ -155,6 +158,7 @@ export function startActivity({
       if (!snapshot || !["agents", "panes", "workspaces"].every((key) => Array.isArray(snapshot[key]))) {
         throw new Error("Activity snapshot is missing agents, panes or workspaces");
       }
+      if (sessions) await sessions.update(snapshot, deadline);
       const plan = activityPlan(snapshot, frameIndex);
       intervalMs = plan.intervalMs;
       frameIndex = (frameIndex + 1) % frames.length;

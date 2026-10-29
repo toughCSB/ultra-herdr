@@ -1,12 +1,29 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { clientAsset, ghosttyClientConfig, activateMacClient } from "./client.mjs";
+import { clientAsset, ghosttyClientConfig, activateMacClient, localClientDirectory } from "./client.mjs";
 import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, rmSync, symlinkSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { execFileSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { fileURLToPath } from "node:url";
+
+test("verified local companion remains selected until the base release changes", () => {
+  const base = mkdtempSync(join(tmpdir(), "ultra-local-client-"));
+  try {
+    const config = join(base, "client-local.json"), dir = join(base, "tested-fix");
+    mkdirSync(dir); writeFileSync(join(dir, "herdr"), "verified companion");
+    const info = { releaseVersion: "3.0.27", baseVersion: "0.9.5", platform: "darwin", arch: "arm64", directory: "tested-fix", sha256: createHash("sha256").update("verified companion").digest("hex") };
+    writeFileSync(config, JSON.stringify(info));
+    const options = { config, platform: "darwin", arch: "arm64", releaseVersion: "3.0.27", baseVersion: "0.9.5" };
+    assert.equal(localClientDirectory(base, options), dir);
+    assert.equal(localClientDirectory(base, { ...options, releaseVersion: "3.0.29" }), null);
+    writeFileSync(join(dir, "herdr"), "changed");
+    assert.throws(() => localClientDirectory(base, options), /SHA256/);
+    writeFileSync(config, JSON.stringify({ ...info, directory: "../outside" }));
+    assert.throws(() => localClientDirectory(base, options), /directory/);
+  } finally { rmSync(base, { recursive: true, force: true }); }
+});
 
 test("installer follows baseVersion across rebases and preserves the old installation", { skip: process.platform !== "darwin" }, () => {
   const dir = mkdtempSync(join(tmpdir(), "ultra-rebase-"));

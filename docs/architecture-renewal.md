@@ -12,7 +12,7 @@ Codex와 `claude-opus-5-5`의 초기 교차 검토에서 다음 순서로 범위
 - Viewing PC의 사이드바와 Execution PC의 터미널 색상 소유권을 유지합니다.
 - Blue/Pink/Red/Brown의 출력 색상, 전체 선택 배경, 상태 의미색과 provider 색을 유지합니다.
 - 보관함, CJK 인식, native renderer와 frozen wire 계약은 변경하지 않습니다.
-- plugin 3.0.28과 companion 3.0.27의 독립 버전을 유지합니다.
+- plugin과 companion의 독립 버전 관리를 유지합니다. 최초 구조 검증 기준은 plugin 3.0.28과 companion 3.0.27이며, 통합 정식 배포는 3.0.29입니다.
 - 기존 서버·대화·클라이언트 프로세스를 종료하지 않습니다.
 - Windows Terminal과 바로가기는 직접 binary 경로를 유지합니다. PowerShell의 공식 CLI 라우팅과 server-stop 보호도 유지합니다.
 

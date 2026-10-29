@@ -1,13 +1,17 @@
 id = "local.ultra-herdr"
 name = "ultra-herdr"
-version = "3.0.28"
-min_herdr_version = "0.9.1"
+version = "3.0.29"
+min_herdr_version = "0.9.5"
 description = "Local-only Herdr themes, provider icons, grouped projects, and whole-window font settings"
 platforms = ["macos", "windows"]
 
 [[build]]
+command = ["/bin/sh", "node-macos.sh", "client.mjs"]
+platforms = ["macos"]
+
+[[build]]
 command = ["node", "client.mjs"]
-platforms = ["macos", "windows"]
+platforms = ["windows"]
 
 [[actions]]
 id = "apply"
@@ -56,4 +60,9 @@ height = 18
 command = ["node", "settings.mjs"]
 
 [[startup]]
+command = ["/bin/sh", "node-macos.sh", "labels.mjs", "start"]
+platforms = ["macos"]
+
+[[startup]]
 command = ["node", "labels.mjs", "start"]
+platforms = ["windows"]

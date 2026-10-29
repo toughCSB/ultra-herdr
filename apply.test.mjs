@@ -184,7 +184,7 @@ test("Radar vendor overrides cannot hide machine badges or recolor state", () =>
   ].join("\n");
   const result = applyTheme(config);
   assert.match(result, /token = "\$skyline_group_machine"/);
-  assert.match(result, /agent_panel_sort = "spaces"/);
+  assert.match(result, /agent_panel_sort = "priority"/);
   assert.match(result, /red = "#ff3030"/);
   assert.match(result, /yellow = "#ffff00"/);
   assert.match(result, /green = "#00ff66"/);

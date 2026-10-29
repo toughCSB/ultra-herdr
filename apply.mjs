@@ -10,6 +10,7 @@ import { prepareOmoTheme } from "./omo-theme.mjs";
 import { prepareMarkdownViewers, markdownPaths } from "./markdown.mjs";
 import { prepareSidebarTheme } from "./sidebar-theme.mjs";
 import { activationError, commitFiles, fileChange } from "./files.mjs";
+import { prepareCodexHudDetection } from "./detection.mjs";
 
 function sidebar(theme) {
   const sidebarText = theme.sidebarText;
@@ -79,7 +80,7 @@ export function applyTheme(config, name = "blue") {
   const uiStart = lines.indexOf("[ui]");
   const uiEnd = lines.findIndex((line, index) => index > uiStart && /^\s*\[/.test(line));
   if (!lines.slice(uiStart + 1, uiEnd < 0 ? lines.length : uiEnd).some(line => /^\s*agent_panel_sort\s*=/.test(line))) {
-    lines.splice(uiStart + 1, 0, 'agent_panel_sort = "spaces"');
+    lines.splice(uiStart + 1, 0, 'agent_panel_sort = "priority"');
   }
   replaceKeys(lines, "theme", { name: '"tokyo-night"', auto_switch: "false" });
   replaceKeys(
@@ -114,7 +115,7 @@ export function applyPalette(name = getThemeName(), size = getFontSize(), option
   const settings = fileChange(settingsPath, source => `${JSON.stringify(themeSettings(fontSettings(JSON.parse(source?.toString("utf8") || "{}"), size), name), null, 2)}\n`);
   const omo = prepareOmoTheme(name, options.agentDir || posix.join(home, ".omo", "agent"));
   const markdown = prepareMarkdownViewers(name, { paths: options.markdownPaths || markdownPaths(platform, environment, home) });
-  commitFiles([config, terminal.change, settings, ...omo.changes, ...markdown, prepareSidebarTheme(name, configPath)], {
+  commitFiles([config, terminal.change, settings, ...omo.changes, ...markdown, prepareSidebarTheme(name, configPath), prepareCodexHudDetection(configPath)], {
     io: options.io,
     validate(staged) {
       terminal.validate(staged);

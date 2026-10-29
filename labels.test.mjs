@@ -329,6 +329,11 @@ test("daemon shutdown also clears activity through its native socket", { timeout
       const result = request.method === "session.snapshot" ? { snapshot } : {};
       socket.end(`${JSON.stringify({ id: request.id, result })}\n`);
       if (["pane.report_metadata", "workspace.report_metadata"].includes(request.method)) {
+        if (request.params.source === "local.ultra-herdr.sessions") {
+          assert.equal(request.method, "pane.report_metadata");
+          assert.match(request.params.tokens.ultra_last_work_ms, /^\d+$/);
+          return;
+        }
         assert.equal(request.params.source, "local.ultra-herdr.activity");
         events.emit(`${request.method}:${request.params.tokens.ultra_activity === null ? "cleared" : "animated"}`);
       }

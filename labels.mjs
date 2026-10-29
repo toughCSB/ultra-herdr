@@ -244,6 +244,7 @@ async function daemon() {
   if (process.env.HERDR_SOCKET_PATH) {
     stopActivity = startActivity({
       socketPath: process.env.HERDR_SOCKET_PATH,
+      trackSessions: true,
       onError: error => log(`activity: ${error.message}`),
     });
   }

@@ -1,5 +1,13 @@
 # Herdr companion client
 
+v3.0.29는 공식 Herdr **v0.9.5** 위에 `herdr-0.9.5-ultra-3.0.29.patch`를 한 번 적용합니다.
+Codex HUD 실행기 인식, 실제 HUD footer 상태 감지, Blocked → 미확인 Done → Working →
+최근 작업한 Idle 정렬을 포함합니다. 기존 보관함·테마·CJK·붙여넣기 수정도 포함한 누적 패치입니다.
+`ultra_last_work_ms` metadata가 없으면 기존 서버 상태 변경 순서를 사용합니다.
+공개 API와 frozen wire 계약은 유지하며, Mac·Windows를 동일 소스에서 각각 빌드합니다.
+Windows에는 검증된 공식 0.9.5 ConPTY runtime과 라이선스를 함께 배포합니다.
+클라이언트와 별개로 기존 서버는 plugin이 적용한 Codex 감지 manifest를 config reload로 읽습니다.
+
 v3.0.27은 공식 Herdr **v0.9.5** 기반 보관함 재연결·중복 복구 릴리스입니다.
 프로젝트의 workspace ID + 정규화된 저장 경로를 지속 식별자로 사용합니다.
 서버 boot는 전송 대상 확인에만 쓰며, 같은 프로젝트의 새 boot에 로컬 기록과 tombstone을 이관합니다.
